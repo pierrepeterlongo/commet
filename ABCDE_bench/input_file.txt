@@ -1,0 +1,3 @@
+set1 : ABCDE_bench/A 
+set2 : ABCDE_bench/B ; ABCDE_bench/C
+set3 : ABCDE_bench/D ; ABCDE_bench/E   

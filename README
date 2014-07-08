@@ -1,0 +1,106 @@
+Contributors : 
+  Pierre PETERLONGO, pierre.peterlongo@inria.fr [12/06/13]
+  Nicolas MAILLET, nicolas.maillet@inria.fr     [12/06/13]
+  Guillaume Collet, guillaume@gcollet.fr        [27/05/14]
+
+This software is a computer program whose purpose is to find all the
+similar reads between two set of NGS reads. It also provide a similarity
+score between the two samples.
+
+Copyright (C) 2014  INRIA
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+———————————————————————————————————————————————————————————————————————————
+INSTALLATION
+
+Compareads 2 has been written in C++. To compile the programs, a makefile 
+using your g++ compiler is provided:
+
+make
+
+If you want to install in /usr/local/bin, run with root permissions (use sudo):
+
+make
+make install
+or
+sudo make install
+
+Then, you can test the executables in directory ABC_bench where you'll find 
+the run_ABC.sh script.
+
+———————————————————————————————————————————————————————————————————————————
+USER GUIDE
+
+A user guide is provided in the directory named doc. Each tool is described
+more than in this README file.
+
+———————————————————————————————————————————————————————————————————————————
+This package contains four applications :
+
+filter_reads
+compare_reads
+extract_reads
+bvop
+
+———————————————————————————————————————————————————————————————————————————
+FILTER_READS
+
+  - input: 
+    - One file containing reads (nucleotide sequences) in fasta or fastq format. 
+      The input file may be compressed with gzip algorithm.
+    - Three parameters for read selection : - minimum size          [default=0]
+                                            - maximum number of N   [default=MAX_INT]
+                                            - minimum Shannon index [default=0]
+
+  - output: 
+    - One file containing a vector of bits. 
+      To each bit of the vector corresponds a read in the input file. 
+      If the bit is 1, then the read was not removed by the filter, if 0, the read was removed.
+
+———————————————————————————————————————————————————————————————————————————
+EXTRACT_READS
+
+  - input:
+    - One file containing reads (nucleotide sequences) in fasta or fastq format.
+      The input file may be compressed with gzip algorithm.
+    - One file containing a vector of bits of the same size.
+
+  - output:
+    - One file containing the reads that correspond to a 1 in the vector of bits
+
+
+———————————————————————————————————————————————————————————————————————————
+COMPARE_READS
+
+  - input:
+    - Two files (A and B) containing reads (nucleotide sequences) in fasta or fastq format. 
+      The input files may be compressed with gzip algorithm.
+    - Options : for each file, a boolean vector that represents the filtered reads
+
+  - output:
+    - Two files containing the vectors of bits corresponding to:
+      - reads from A found in B 
+      - reads from B found in A
+
+———————————————————————————————————————————————————————————————————————————
+BVOP
+
+  - input:
+    - One file containing a vector of bits.
+    - Options : another file containing a vector of bits depending on the operation.
+
+  - output:
+    - One file containing a vector of bits.
+
