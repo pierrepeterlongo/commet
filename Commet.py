@@ -4,7 +4,7 @@
 #   Guillaume Collet, guillaume@gcollet.fr        [27/05/14]
 #
 # This software is a computer program whose purpose is to find all the
-# similar reads between two set of NGS reads. It also provide a similarity
+# similar reads between sets of NGS reads. It also provide a similarity
 # score between the two samples.
 #
 # Copyright (C) 2014  INRIA
@@ -44,10 +44,41 @@ def getReadFiles(F):
     while(True):
         line=fofs.readline()
         if not line: break
+        if not line.strip(): continue # avoid empty lines
         line=line.split(":")[1]
         tab_line=line[:-1].split(";") # [:-1] removes the \n
         for i in range(len(tab_line)):
-            tab_line[i]=tab_line[i].strip() # removes first and/or last empty characters before and after set names
+            tab_line[i]=tab_line[i].strip().split(",")[0] # removes first and/or last empty characters before and after set names and conserves only the read names (not their eventual .bv files)
+        matrix.append(tab_line)
+    fofs.close()
+    return matrix
+    
+
+def fillDefaultBVReadSetMatrix(readSetMatrix, output_directory):
+    matrix= []
+    for line in readSetMatrix:
+        new_line = []
+        for read_set in line:
+            new_line.append(output_directory+os.path.basename(read_set)+".bv")
+        matrix.append(new_line)
+    return matrix
+    
+
+def getReadBVFiles(F):
+    matrix= []
+    fofs=open(F,'r')
+    line=fofs.readline()
+    if not ',' in line: return None # filtered reads were not given. 
+    
+    fofs.seek(0)
+    while(True):    
+        line=fofs.readline()
+        if not line: break
+        if not line.strip(): continue # avoid empty lines
+        line=line.split(":")[1]
+        tab_line=line[:-1].split(";") # [:-1] removes the \n
+        for i in range(len(tab_line)):
+            tab_line[i]=tab_line[i].strip().split(",")[1] # removes first and/or last empty characters before and after set names and conserve only the .bv file names
         matrix.append(tab_line)
     fofs.close()
     return matrix
@@ -58,6 +89,7 @@ def getReadSetsNames(F):
     while(True):
         line=fofs.readline()
         if not line: break
+        if not line.strip(): continue # avoid empty lines
         table.append(line.split(":")[0].strip())
     return table
     
@@ -67,7 +99,7 @@ def getReadSetsNames(F):
 #################### Filter the reads respecting parameters                            #######################
 #################### For each set generates a .bv having the same name as the input read set #################
 ##############################################################################################################   
-def filterAllReads(readSetMatrix, output_directory, l, n, e, m, SGE_COMMANDS):
+def filterAllReads(readSetMatrix, output_directory, l, n, e, m, SGE_COMMANDS, bin_dir):
     options=" -l "+str(l)+" -e "+str(e)
     filtering_job_ids=""
     if(n>=0):
@@ -78,7 +110,7 @@ def filterAllReads(readSetMatrix, output_directory, l, n, e, m, SGE_COMMANDS):
             local_m=m/len(tab_line)
             m_option=" -m "+str(local_m)
         for i in range(len(tab_line)):
-            command="./filter_reads "+tab_line[i]+options+m_option+" -o "+output_directory+os.path.basename(tab_line[i])+".bv"
+            command=bin_dir+"filter_reads "+tab_line[i]+options+m_option+" -o "+output_directory+os.path.basename(tab_line[i])+".bv"
             print "Filtering command: "+command
             if not SGE_COMMANDS:
                 os.system(command)
@@ -90,14 +122,15 @@ def filterAllReads(readSetMatrix, output_directory, l, n, e, m, SGE_COMMANDS):
 ##############################################################################################################
 #################### For each read set: generates a file containing the original line + the .bv info   #######
 ##############################################################################################################
-def generateAFileOfFilesPerOriginalWithFilterBooleanVector(readSetMatrix, readSetNames, output_directory, temp_files_prefix):
-    line_id=0
-    for tab_line in readSetMatrix:
+def generateAFileOfFilesPerOriginalWithFilterBooleanVector(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, temp_files_prefix):
+    for line_id in range(len(readSetMatrix)):
+        tab_line=readSetMatrix[line_id]
+        tab_line_bv=bvreadSetMatrix[line_id]
         per_set_fofs_bv=open(readSetNames[line_id]+"_"+temp_files_prefix+".txt",'w')
         per_set_fofs_bv.write(readSetNames[line_id]+":")
-        line_id+=1
         for i in range(len(tab_line)):
-            per_set_fofs_bv.write(tab_line[i]+","+output_directory+os.path.basename(tab_line[i])+".bv")
+#            per_set_fofs_bv.write(tab_line[i]+","+output_directory+os.path.basename(tab_line[i])+".bv")
+            per_set_fofs_bv.write(tab_line[i]+","+tab_line_bv[i])
             if i<len(tab_line)-1: 
                 per_set_fofs_bv.write(";")
         per_set_fofs_bv.close()
@@ -122,14 +155,16 @@ def generate_A_File_Of_File_Index_WRT_A_Set(readSetMatrix, readSetNames, output_
 ##############################################################################################################
 #################### For each index: generates the query file of files                       #################
 ##############################################################################################################
-def generateAFileOfSetOfFilesOriginalWithFilterBooleanVector(readSetMatrix, readSetNames, output_directory, fileName, whichToIndex):
+def generateAFileOfSetOfFilesOriginalWithFilterBooleanVector(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, fileName, whichToIndex):
     line_id=0
     index_fofs_bv=open(fileName,'w') #
     for line_id in range(whichToIndex):
         tab_line=readSetMatrix[line_id]
+        tab_line_bv=bvreadSetMatrix[line_id]
         index_fofs_bv.write(readSetNames[line_id]+":")
         for i in range(len(tab_line)):
-            index_fofs_bv.write(tab_line[i]+","+output_directory+os.path.basename(tab_line[i])+".bv")
+#            index_fofs_bv.write(tab_line[i]+","+output_directory+os.path.basename(tab_line[i])+".bv")
+            index_fofs_bv.write(tab_line[i]+","+tab_line_bv[i])
             if i<len(tab_line)-1: 
                 index_fofs_bv.write(";")
         index_fofs_bv.write("\n")
@@ -142,7 +177,7 @@ def generateAFileOfSetOfFilesOriginalWithFilterBooleanVector(readSetMatrix, read
 #################### Compare all read sets against a reference file and then                 #################
 #################### And finish symetrical comparisons                                       #################
 ##############################################################################################################
-def compare_all_against(readSetMatrix, readSetNames, output_directory, temp_files_prefix, index_reference_set, k, t, SGE_COMMANDS, filtering_job_ids):
+def compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, temp_files_prefix, index_reference_set, k, t, SGE_COMMANDS, filtering_job_ids, bin_dir):
     
     kt_options=" -t "+str(t)+" -k "+str(k)+" "
     
@@ -152,14 +187,17 @@ def compare_all_against(readSetMatrix, readSetNames, output_directory, temp_file
     # Does the job A in Sindex and B in Sindex and C in Sindex (with Sindex is the line pointed by index_reference_set in the file temp_files_prefix+"_BV_filters.txt)
     # for each Si in [0,index_reference_set-1]  the output is a set of file of files set_i_in_Xj.txt (with j = index_reference_set) per i in [0,index_reference_set]
     queries_fof_file_name="queries_for_index_"+readSetNames[index_reference_set]+"_"+temp_files_prefix+".txt"
-    generateAFileOfSetOfFilesOriginalWithFilterBooleanVector(readSetMatrix, readSetNames, output_directory, queries_fof_file_name, index_reference_set)
+    generateAFileOfSetOfFilesOriginalWithFilterBooleanVector(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, queries_fof_file_name, index_reference_set)
     index_fof_file_name=readSetNames[index_reference_set]+"_"+temp_files_prefix+".txt"
-    command="./index_and_search -i "+index_fof_file_name + " -s "+queries_fof_file_name+ " -o "+output_directory+kt_options
+    command=bin_dir+"index_and_search -i "+index_fof_file_name + " -s "+queries_fof_file_name+ " -o "+output_directory+kt_options
     last_job_ids=""
     print "All in "+ readSetNames[index_reference_set]+": Command="+command
     ref_job_id=""
     if SGE_COMMANDS:
-        ref_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(filtering_job_ids)+" -N \"log_all_in_"+str(index_reference_set)+"\"").read().split(" ")[2])
+        if filtering_job_ids!=None:
+            ref_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(filtering_job_ids)+" -N \"log_all_in_"+str(index_reference_set)+"\"").read().split(" ")[2])
+        else:
+            ref_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -N \"log_all_in_"+str(index_reference_set)+"\"").read().split(" ")[2])
     else:
         os.popen(command)
     
@@ -173,7 +211,7 @@ def compare_all_against(readSetMatrix, readSetNames, output_directory, temp_file
         index_file_name="index_"+readSetNames[i]+"_previous_"+readSetNames[index_reference_set]+"_"+temp_files_prefix+".txt"
         generate_A_File_Of_File_Index_WRT_A_Set(readSetMatrix, readSetNames, output_directory, index_file_name, index_reference_set, i)
         query_file_name=readSetNames[index_reference_set]+"_"+temp_files_prefix+".txt"
-        command="./index_and_search -i "+index_file_name+" -s "+query_file_name+ " -o "+output_directory+kt_options
+        command=bin_dir+"index_and_search -i "+index_file_name+" -s "+query_file_name+ " -o "+output_directory+kt_options
         print " "+readSetNames[index_reference_set]+" in ("+ readSetNames[i]+" in "+readSetNames[index_reference_set]+"): Command="+command
         X_in_Si_job_id=""
         if SGE_COMMANDS:
@@ -186,7 +224,7 @@ def compare_all_against(readSetMatrix, readSetNames, output_directory, temp_file
         index_file_name="index_"+readSetNames[index_reference_set]+"_previous_"+readSetNames[i]+"_"+temp_files_prefix+".txt"
         generate_A_File_Of_File_Index_WRT_A_Set(readSetMatrix, readSetNames, output_directory, index_file_name, i, index_reference_set)
         query_file_name=readSetNames[i]+"_"+temp_files_prefix+".txt"
-        command="./index_and_search -i "+index_file_name+" -s "+query_file_name+ " -o "+output_directory+kt_options
+        command=bin_dir+"index_and_search -i "+index_file_name+" -s "+query_file_name+ " -o "+output_directory+kt_options
         print " "+readSetNames[i]+"_in_("+readSetNames[index_reference_set]+" in ("+ readSetNames[i]+" in "+readSetNames[index_reference_set]+")): Command="+command
         if SGE_COMMANDS:
             last_job_ids+=os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(X_in_Si_job_id)+" -N \"log_"+str(i)+"_in_"+str(index_reference_set)+"\"").read().split(" ")[2]+","
@@ -199,7 +237,7 @@ def compare_all_against(readSetMatrix, readSetNames, output_directory, temp_file
 ##############################################################################################################
 #################### Output the results matrix (csv)                                         #################
 ##############################################################################################################
-def output_matrices (readSetMatrix, readSetNames, output_directory, matrix_prefix):
+def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, bin_dir):
     matrix_sum_shared_reads=[] # for each set, number of shared reads with each other sets [Matrix]
     number_reads_all_sets=[] # for each set, number of considered reads
     max_plain=0
@@ -212,22 +250,22 @@ def output_matrices (readSetMatrix, readSetNames, output_directory, matrix_prefi
     for id_set in range(len(readSetNames)):
         # detect the number of involved reads per line of the input
         number_reads=0
-        for read_set in readSetMatrix[id_set]:
-            command="./bvop "+output_directory+os.path.basename(read_set)+".bv -i"
-            #print command
+        for read_set_bv in bvreadSetMatrix[id_set]:
+            command=bin_dir+"bvop "+read_set_bv+" -i"
             number_reads+=int(os.popen(command).read().split("\n")[-2].split()[0])
         number_reads_all_sets.append(number_reads)
         
         # detect the number of shared reads with all other sets:
         array_sum_shared_reads=[]
+        print readSetNames
         for id_target_set in range(len(readSetNames)): # for each target set
             if id_set == id_target_set:
                 array_sum_shared_reads.append(number_reads_all_sets[id_set])
                 continue;
             number_shared_reads=0
             for read_set in readSetMatrix[id_set]: # for each read set of the surrent set of read sets :)
-                command="./bvop "+output_directory+os.path.basename(read_set)+"_in_"+readSetNames[id_target_set]+".bv -i"
-		number_shared_reads+=int(os.popen(command).read().split("\n")[-2].split()[0]) # get the  number of shared reads
+                command=bin_dir+"bvop "+output_directory+os.path.basename(read_set)+"_in_"+readSetNames[id_target_set]+".bv -i"
+                number_shared_reads+=int(os.popen(command).read().split("\n")[-2].split()[0]) # get the  number of shared reads
             array_sum_shared_reads.append(number_shared_reads)
         matrix_sum_shared_reads.append(array_sum_shared_reads)
     
@@ -236,7 +274,7 @@ def output_matrices (readSetMatrix, readSetNames, output_directory, matrix_prefi
     # Print the matrices
     #####################
     # Plain Matrix
-    matrix_file=open(output_directory+matrix_prefix+"_plain.csv","w")
+    matrix_file=open(output_directory+"matrix_plain.csv","w")
         
     for set_name in readSetNames:
         matrix_file.write(";"+set_name)
@@ -249,10 +287,10 @@ def output_matrices (readSetMatrix, readSetNames, output_directory, matrix_prefi
             matrix_file.write(";"+str(matrix_sum_shared_reads[id_set][id_target_set]))
             
         matrix_file.write("\n")
-    if matrix_prefix: matrix_file.close()
+    matrix_file.close()
     
     # Percentage matrix:
-    matrix_file=open(output_directory+matrix_prefix+"_percentage.csv","w")
+    matrix_file=open(output_directory+"matrix_percentage.csv","w")
     for set_name in readSetNames:
         matrix_file.write(";"+set_name)
     matrix_file.write("\n")
@@ -263,12 +301,12 @@ def output_matrices (readSetMatrix, readSetNames, output_directory, matrix_prefi
             if id_target_set!=id_set and value > max_percentage: max_percentage=value
             matrix_file.write(";"+str(value))
         matrix_file.write("\n")
-    if matrix_prefix: matrix_file.close()
+    matrix_file.close()
     
     
     
     # Normalized matrix:
-    matrix_file=open(output_directory+matrix_prefix+"_normalized.csv","w")
+    matrix_file=open(output_directory+"matrix_normalized.csv","w")
     for set_name in readSetNames:
         matrix_file.write(";"+set_name)
     matrix_file.write("\n")
@@ -279,32 +317,32 @@ def output_matrices (readSetMatrix, readSetNames, output_directory, matrix_prefi
             if id_target_set!=id_set and value > max_normalized: max_normalized=value
             matrix_file.write(";"+str(value))
         matrix_file.write("\n")
-    if matrix_prefix: matrix_file.close()
+    matrix_file.close()
     
     
     # Plot the dendrograms (only if a matrix file was given)
     ########################################################
     # Plain Matrix
-    command="Rscript --vanilla dendro.R "+output_directory+matrix_prefix+"_plain.csv " + str(len(readSetNames))+ " " +output_directory+matrix_prefix+"_plain.pdf"
+    command="Rscript --vanilla dendro.R "+output_directory+"matrix_plain.csv " + str(len(readSetNames))+ " " +output_directory+"dendrogram_plain.pdf"
     print command
     os.system(command)
     # Percentage matrix:
-    command="Rscript --vanilla dendro.R "+output_directory+matrix_prefix+"_percentage.csv " +str(len(readSetNames))+ " " +output_directory+matrix_prefix+"_percentage.pdf"
+    command="Rscript --vanilla dendro.R "+output_directory+"matrix_percentage.csv " +str(len(readSetNames))+ " " +output_directory+"dendrogram_percentage.pdf"
     os.system(command)
     # Normalized matrix:
-    command="Rscript --vanilla dendro.R "+output_directory+matrix_prefix+"_normalized.csv " +str(len(readSetNames))+ " " +output_directory+matrix_prefix+"_normalized.pdf"
+    command="Rscript --vanilla dendro.R "+output_directory+"matrix_normalized.csv " +str(len(readSetNames))+ " " +output_directory+"dendrogram_normalized.pdf"
     os.system(command)
     
     
     # Plot the heatmap matrices
     # Plain Matrix
-    command="Rscript --vanilla heatmap.r "+output_directory+matrix_prefix+"_plain.csv " + output_directory+matrix_prefix+"_plain_heatmap.pdf " + str(max_plain) + " " + str(max_plain_diag)+ " "+ matrix_prefix+"_plain"
+    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_plain.csv " + output_directory+"heatmap_plain.pdf " + str(max_plain) + " " + str(max_plain_diag)+ " plain"
     os.system(command)
     # Percentage Matrix
-    command="Rscript --vanilla heatmap.r "+output_directory+matrix_prefix+"_percentage.csv " + output_directory+matrix_prefix+"_percentage_heatmap.pdf " + str(max_percentage) + " 100 " + matrix_prefix+"_percentage"
+    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_percentage.csv " + output_directory+"heatmap_percentage.pdf " + str(max_percentage) + " 100 percentage"
     os.system(command)
     # Normalized Matrix
-    command="Rscript --vanilla heatmap.r "+output_directory+matrix_prefix+"_normalized.csv " + output_directory+matrix_prefix+"_normalized_heatmap.pdf " + str(max_normalized) + " 100 " + matrix_prefix+"_normalized"
+    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_normalized.csv " + output_directory+"heatmap_normalized.pdf " + str(max_normalized) + " 100 normalized"
     print command
     os.system(command)
     
@@ -319,8 +357,11 @@ def main():
                         
     parser.add_argument('--sge', help='indicates the usage of SGE cluster commands', action="store_true") # SGE 
     
+    parser.add_argument("-b", "--binaries_directory", type=str, dest='binary_directory', metavar='',
+                        help="binary directory  [default: \"./bin\"]", default="./bin" )
+    
     parser.add_argument("-o", "--output_directory", type=str, dest='directory', metavar='',
-                        help="directory in which vector results will be output [default: \"output_commet\"]", default="output_commet/" )
+                        help="directory in which results will be output [default: \"output_commet\"]", default="output_commet/" )
                         
     parser.add_argument("-k", type=int, dest='k', 
                         help="kmer size [default: 32]", default=32 )
@@ -340,16 +381,25 @@ def main():
     parser.add_argument("-m", type=int, dest='m',
                         help="maximum number of selected reads - This applies to a full set of reads. If a line of input_file is composed by 3 read files, and m=600, then the first 200 reads from each read file will be treated. [default=all]", default=-1 )
     
-    parser.add_argument("prefix_matrix", type=str,
-                        help="prefix of files in which matrices are output (in the output directory)[default=stdout]", default=None)
+    
     
 
     args = parser.parse_args()
  
     # The input file of files
     input_file=str(args.input_file)
-    output_directory=str(args.directory)+"/"
-    output_matrix_prefix=args.prefix_matrix
+    output_directory=str(args.directory)
+    if output_directory[-1]!='/': output_directory+="/"
+    bin_dir=str(args.binary_directory)
+    print "OIEHZFOIHJ"+bin_dir[-1]
+    if bin_dir[-1]!='/': 
+        bin_dir+="/"
+    
+    
+    if not os.path.isfile(bin_dir+"bvop"):
+        print "Cannot find binaries in directory +\""+bin_dir+"\". Exit"
+        sys.exit(1) 
+    
     k=args.k
     t=args.t
     l=args.l
@@ -367,9 +417,6 @@ def main():
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
-
-    print "output matrices prefix: in:"+output_matrix_prefix
-
 
     print "k="+str(k), 
     
@@ -404,45 +451,58 @@ def main():
     readSetMatrix = getReadFiles(input_file)
     readSetNames = getReadSetsNames(input_file)
     
-    # Filter the reads 
-    filtering_job_ids=filterAllReads(readSetMatrix, output_directory, l, n, e, m, SGE_COMMANDS)
+    bvreadSetMatrix = getReadBVFiles(input_file)
+     
+    filtering_job_ids=None
+    if bvreadSetMatrix == None:
+        # Filter the reads 
+        print "Reads were not filtered, we filter them."
+        filtering_job_ids=filterAllReads(readSetMatrix, output_directory, l, n, e, m, SGE_COMMANDS, bin_dir)
+        bvreadSetMatrix = fillDefaultBVReadSetMatrix(readSetMatrix, output_directory)
+        
     
     # Generate the file of files containing the .bv of the filtered reads
-    generateAFileOfFilesPerOriginalWithFilterBooleanVector(readSetMatrix, readSetNames, output_directory, temp_files_prefix)
+    generateAFileOfFilesPerOriginalWithFilterBooleanVector(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, temp_files_prefix)
+    
     
     # Compare all against all
     alljobids=""
     for ref_id in range(len(readSetMatrix)-1,0,-1):
-        jobids=compare_all_against(readSetMatrix, readSetNames, output_directory, temp_files_prefix, ref_id, k, t, SGE_COMMANDS, filtering_job_ids)
+        jobids=compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, temp_files_prefix, ref_id, k, t, SGE_COMMANDS, filtering_job_ids, bin_dir)
         alljobids+=jobids
-    
-    if not SGE_COMMANDS:
-        output_matrices (readSetMatrix, readSetNames, output_directory, output_matrix_prefix)
         
     alljobids=alljobids[:-1] # remove the last ','
+        
+        
+    
     if SGE_COMMANDS:
         command="rm -f *"+temp_files_prefix+"*"
-        os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(alljobids)+" -N \"clean\"")
-        command="source /softs/local/env/envR.sh;  . /softs/local/env/envpython-2.7.sh ; ./Commet_analysis.py "+input_file+" "+output_matrix_prefix+" -o "+output_directory
-        last_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(alljobids)+" -N \"make_matrices\"").read().split(" ")[2])
-        print "All Commet jobs are launched - once last job ("+str(last_job_id)+") is over, all output matrices will be in:"
-        print 
+        last_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(alljobids)+" -N \"clean\"").read().split(" ")[2])
+        
+        print "All Commet jobs are launched - once last job ("+str(last_job_id)+") is over, type the following command in order to analyze the .bv results :"
+        command="./Commet_analysis.py "+input_file+" -o "+output_directory+" -b "+bin_dir
+        print "\t"+command
     else:
-        os.popen("rm -f *"+temp_files_prefix+"*")
-	print "All Commet work is done"
-    print "\t Output csv matrices are in:"        
-    print "\t\t"+output_directory+output_matrix_prefix+"_plain.csv"
-    print "\t\t"+output_directory+output_matrix_prefix+"_percentage.csv"
-    print "\t\t"+output_directory+output_matrix_prefix+"_normalized.csv"
-    print "\t Output pdf dendrograms are in:"       
-    print "\t\t"+output_directory+output_matrix_prefix+"_plain.pdf"
-    print "\t\t"+output_directory+output_matrix_prefix+"_percentage.pdf"
-    print "\t\t"+output_directory+output_matrix_prefix+"_normalized.pdf"
-    print "\t Output pdf heatmaps are in:"       
-    print "\t\t"+output_directory+output_matrix_prefix+"_plain_heatmap.pdf"
-    print "\t\t"+output_directory+output_matrix_prefix+"_percentage_heatmap.pdf"
-    print "\t\t"+output_directory+output_matrix_prefix+"_normalized_heatmap.pdf"
-    
+        output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, bin_dir)
+        command="rm -f *"+temp_files_prefix+"*"
+        print "removing temp files: "+command
+        os.popen(command)
+    	
+        print "All Commet work is done"
+        print "\t Output csv matrices are in:"        
+        print "\t\t"+output_directory+"matrix_plain.csv"
+        print "\t\t"+output_directory+"matrix_percentage.csv"
+        print "\t\t"+output_directory+"matrix_normalized.csv"
+        print "\t Output pdf dendrograms are in:"       
+        print "\t\t"+output_directory+"dendrogram_plain.pdf"
+        print "\t\t"+output_directory+"dendrogram_percentage.pdf"
+        print "\t\t"+output_directory+"dendrogram_normalized.pdf"
+        print "\t Output pdf heatmaps are in:"       
+        print "\t\t"+output_directory+"heatmap_plain.pdf"
+        print "\t\t"+output_directory+"heatmap_percentage.pdf"
+        print "\t\t"+output_directory+"heatmap_normalized.pdf"
+        
+    sys.exit(1)
 
 if __name__ == "__main__":
     main()

@@ -4,7 +4,7 @@
 #   Guillaume Collet, guillaume@gcollet.fr        [27/05/14]
 #
 # This software is a computer program whose purpose is to find all the
-# similar reads between two set of NGS reads. It also provide a similarity
+# similar reads between sets of NGS reads. It also provide a similarity
 # score between the two samples.
 #
 # Copyright (C) 2014  INRIA
@@ -32,48 +32,57 @@ import subprocess
 from Commet import getReadFiles
 from Commet import getReadSetsNames
 from Commet import output_matrices
-
-
+from Commet import getReadBVFiles
+from Commet import fillDefaultBVReadSetMatrix
 
 def main():
     parser = argparse.ArgumentParser(description='Computes the matrices from .bv results')
     parser.add_argument("input_file", type=str,
                         help="input file of files (a line=a set composed by: \"set_name:read_file;read_file;read_file...\")" )
                     
+
+    
+    parser.add_argument("-b", "--binaries_directory", type=str, dest='binary_directory', metavar='',
+                        help="binary directory  [default: \"./bin\"]", default="./bin" )
+                    
     parser.add_argument("-o", "--output_directory", type=str, dest='directory', metavar='',
                         help="directory in which vector results will be output [default: \"output_commet\"]", default="output_commet/" )
   
-    parser.add_argument("prefix_matrix", type=str,
-                        help="prefix of files in which matrices are output (in the output directory)[default=stdout]", default=None)
     
 
     args = parser.parse_args()
  
     # The input file of files
     input_file=str(args.input_file)
-    output_directory=str(args.directory)+"/"
-    output_matrix_prefix=args.prefix_matrix
-    print "input file="+input_file, 
-    
-
-    #ouput directory
-    print " output directory="+output_directory
-
-    print "output matrices in:"
-    print "\t"+output_directory+output_matrix_prefix+"_plain.csv"
-    print "\t"+output_directory+output_matrix_prefix+"_percentage.csv"
-    print "\t"+output_directory+output_matrix_prefix+"_normalized.csv"
+    output_directory=str(args.directory)
+    if output_directory[-1]!='/': output_directory+="/"
+    bin_dir=str(args.binary_directory)
+    if bin_dir[-1]!='/': bin_dir+="/"
 
 
     # Stores the input reads in a matrix
     readSetMatrix = getReadFiles(input_file)
-    readSetNames = getReadSetsNames(input_file)
-    output_matrices (readSetMatrix, readSetNames, output_directory, output_matrix_prefix)
+    bvreadSetMatrix = getReadBVFiles(input_file)
+    if bvreadSetMatrix == None:
+        bvreadSetMatrix = fillDefaultBVReadSetMatrix(readSetMatrix, output_directory)
     
-    print "All Comme_analysis work is done, output matrices are in:"
-    print "\t"+output_directory+output_matrix_prefix+"_plain.csv and .pdf"
-    print "\t"+output_directory+output_matrix_prefix+"_percentage.csv and .pdf"
-    print "\t"+output_directory+output_matrix_prefix+"_normalized.csv and .pdf"
+    readSetNames = getReadSetsNames(input_file)
+    
+    output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, bin_dir)
+    
+    print "All Commet work is done"
+    print "\t Output csv matrices are in:"        
+    print "\t\t"+output_directory+"matrix_plain.csv"
+    print "\t\t"+output_directory+"matrix_percentage.csv"
+    print "\t\t"+output_directory+"matrix_normalized.csv"
+    print "\t Output pdf dendrograms are in:"       
+    print "\t\t"+output_directory+"dendrogram_plain.pdf"
+    print "\t\t"+output_directory+"dendrogram_percentage.pdf"
+    print "\t\t"+output_directory+"dendrogram_normalized.pdf"
+    print "\t Output pdf heatmaps are in:"       
+    print "\t\t"+output_directory+"heatmap_plain.pdf"
+    print "\t\t"+output_directory+"heatmap_percentage.pdf"
+    print "\t\t"+output_directory+"heatmap_normalized.pdf"
 
 if __name__ == "__main__":
     main()
