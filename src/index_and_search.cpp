@@ -30,6 +30,7 @@
 #include "file_manager_max.h"
 #include "bloom_filter.h"
 #include "boolean_vector.h"
+#include "set_parser.h"
 
 
 #include <sys/types.h>
@@ -47,9 +48,6 @@ std::string version = "2.1";
 //                              PROTOTYPE
 // -----------------------------------------------------------------------
 void print_usage ();
-
-void read_sets (const std::string & file_name, std::map <std::string, std::vector <std::string> > & file_names, std::map <std::string, std::vector <std::string> > & bv_names);
-void remove_spaces (std::string & fname);
 
 // -----------------------------------------------------------------------
 //                                MAIN
