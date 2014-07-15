@@ -1,4 +1,4 @@
-/**
+/*
  * Contributors :
  *   Pierre PETERLONGO, pierre.peterlongo@inria.fr [12/06/13]
  *   Nicolas MAILLET, nicolas.maillet@inria.fr     [12/06/13]
