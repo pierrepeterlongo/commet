@@ -47,7 +47,7 @@ public:
 	//
 	explicit FastqFile (const std::string & file_name)
 	{
-		std::cerr << "Open FASTQ\n";
+		//std::cerr << "Open FASTQ\n";
 		fname = file_name;
 		// Open the file
 		infile.open (file_name.c_str());
@@ -64,9 +64,7 @@ public:
 				nb_reads++;
 			}
 		}
-		std::cout << nb_reads << " lines counted\n";
 		nb_reads = nb_reads / 4;
-		std::cout << nb_reads << " reads counted\n";
 		rewind();
 		//std::cerr << "Count " << nb_reads << " reads in " << float( clock () - begin_time ) / CLOCKS_PER_SEC << " s\n";
 		// Set boolean vector to 1
@@ -100,9 +98,7 @@ public:
 				nb_reads++;
 			}
 		}
-		std::cout << nb_reads << " lines counted\n";
 		nb_reads = nb_reads / 4;
-		std::cout << nb_reads << " reads counted\n";
 		rewind();
 		//std::cerr << "Count " << nb_reads << " reads in " << float( clock () - begin_time ) / CLOCKS_PER_SEC << " s in " << file_name << "\n";
 		// Read the boolean vector in bv file

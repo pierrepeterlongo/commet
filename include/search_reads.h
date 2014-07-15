@@ -33,7 +33,6 @@
 
 unsigned long search_reads (const BloomFilter * index, FileManager * search_file_manager, const int & kmer_size, const int & min_hits, unsigned long & nb_searched_reads)
 {
-	clock_t begin_time = clock();
 	// Search reads from search_file_manager in the indexed reads
 	HashKey hash (kmer_size);
 	Alphabet * alphabet = Alphabet::getInstance();
@@ -84,7 +83,6 @@ unsigned long search_reads (const BloomFilter * index, FileManager * search_file
 		}
 		current_read_to_search = search_file_manager->get_next_read_to_compare();
 	}
-	std::cout << float(clock () - begin_time) / CLOCKS_PER_SEC << " seconds\n";
 	return nb_found_reads;
 }
 

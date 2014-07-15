@@ -1,4 +1,4 @@
-/*
+/**
  * Contributors :
  *   Pierre PETERLONGO, pierre.peterlongo@inria.fr [12/06/13]
  *   Nicolas MAILLET, nicolas.maillet@inria.fr     [12/06/13]
@@ -56,7 +56,7 @@ private:
 		alpha[(int)'T'] = 1;
 		alpha[(int)'t'] = 1;
 	};
-	~Alphabet() {std::cerr << "destroy\n";};
+	~Alphabet() {};
 	
 	char alpha [255];
 };

@@ -30,24 +30,53 @@ if (!require("gplots")) {
 options(echo=TRUE) # if you want see commands in output file
 args <- commandArgs(trailingOnly = TRUE)
 pdf(args[2])
-breaks <- seq(from = 0, to = as.numeric(args[3]), length = 13)
+
+maxi=as.numeric(args[3])
+trueMax=as.numeric(args[4])
+n=100 # number of steps between 2 colors
+breaks <- seq(from = 0, to = maxi, length = 13)
 cr3 = as.matrix(read.table(file=args[1], sep=";", header=TRUE, row.names=1))
-# print(cr3)
-#heatmap.2(cr3, dendrogram='none', Colv = "Rowv", distfun=mydist, col = topo.colors(12), scale="none", tracecol=TRUE, margins=c(10,10), key = TRUE, keysize = 1.5, denscol="1", density.info=c("histogram"), lhei = c(2, 8), breaks = breaks)
+palette=colorRampPalette(c("green", "yellow", "red", "brown", "black"))(n = 5*n-1)
+breaks=c(seq(0,maxi/4,length=n), # for green
+               seq(maxi/4,maxi/2,length=n), # for yellow
+               seq(maxi/2,3*maxi/4,length=n), # for red
+               seq(3*maxi/4,maxi,length=n), # for brown
+               seq(maxi,trueMax,length=n)) # for black
 
-my_palette <- colorRampPalette(c("green", "yellow", "red"))(n = 299)
+#layouts for legend
+mat <- matrix(c(1,0,0,2), 2) 
+layout(mat, c(4,10), c(4,10))
 
-col_breaks = c(seq(0,as.numeric(args[3])/2,length=100), # for red
-seq(as.numeric(args[3])/2,as.numeric(args[3]),length=100), # for yellow
-seq(as.numeric(args[3]),as.numeric(args[4]),length=100)) # for green
+breaksToMaxi=breaks[1:(4*n)] # prend que les breaks <=maxi
+black.width=maxi/10
+black.space=maxi/10
+
+
+par(xpd=T,cex=1.8,mar=c(1,1,1,1))
+plot(c(0,maxi+black.width+black.space),c(0,2),type="n",yaxt="n",ylab="",xlab=NULL,xaxt="n",xaxs = "i", yaxs = "i")
+rect(breaksToMaxi[-length(breaksToMaxi)],0,breaksToMaxi[-1],2,col=palette,border=NA)
+rect(maxi+black.space,0,maxi+black.space+black.width,2,col="black",border=NA)
+
+ti=pretty(1:maxi)
+ti=ti[ti<trueMax]
+axis(1,at=c(ti,maxi+black.space+black.width/2),label=c(ti,trueMax))
+
+# pour faire un break
+rect(maxi,-0.1,maxi+black.space,2.1,col="white",border=NA)
 
  heatmap.2(cr3,
  trace = "none",
- Rowv = "NA",
- Colv = "NA",
- col=my_palette,
- breaks = col_breaks,
+ dendrogram = "none",
+  key = FALSE,
+  Rowv = "NA",
+  Colv = "NA",
+ col=palette,
+ breaks = breaks,
  margins=c(10,10),
  main = args[5])
+
+# par(fig=c(0,0.3,0.7,1), new=TRUE)
+ 
+ 
 
 

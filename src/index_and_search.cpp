@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <ctime>
@@ -75,6 +76,9 @@ int main (int argc, char ** argv)
 	// path to output messages
 	std::string log_path = ".";
 	std::string out_path = ".";
+	
+	// Full analysis
+	bool full = false;
 	
 	////////////////////////////////////////////////////////////
 	// Read command line arguments
@@ -152,6 +156,8 @@ int main (int argc, char ** argv)
 			}
 			min_hits = atoi(argv[arg_pos]);
 			std::cout << "min hits (-t) = " << min_hits << "\n";
+		} else if (flag.compare("-f") == 0) {
+			full = true;
 		} else if (flag.compare("-h") == 0) {
 			print_usage ();
 			return 0;
@@ -223,6 +229,24 @@ int main (int argc, char ** argv)
 			}
 		}
 		search_sets.push_back(current_manager);
+		if (full) {
+			break;
+		}
+	}
+	
+	////////////////////////////////////////////////////////////
+	// Create a log file for each comparison
+	//
+	std::vector<std::ofstream *> log_files;
+	for (size_t set_pos = 0; set_pos < search_sets.size(); set_pos++) {
+		std::string fname = log_path + "/" + search_sets[set_pos]->get_nickname() + "_in_" + index_set->get_nickname() + ".log";
+		std::ofstream * log_file = new std::ofstream();
+		log_file->open(fname.c_str());
+		if (!log_file->good()) {
+			std::cerr << "Cannot open log file : " << fname << "\n";
+			exit(1);
+		}
+		log_files.push_back(log_file);
 	}
 	
 	////////////////////////////////////////////////////////////
@@ -235,22 +259,145 @@ int main (int argc, char ** argv)
 	std::vector<unsigned long> nb_found_reads (search_sets.size(), 0);
 	std::vector<unsigned long> nb_searched_reads (search_sets.size(), 0);
 	
+	// just for full analysis
+	unsigned long nb_reads_A = index_set->get_total_nb_reads();
+	unsigned long nb_reads_B = search_sets[0]->get_total_nb_reads();
+	
 	BloomFilter * index = NULL;
 	
+	clock_t index_time = 0;
+	std::vector<clock_t> search_times (search_sets.size(), 0);
+	clock_t start_time = clock();
 	while (index_set->get_reads_count() < nb_reads_to_index) {
 		if (index != NULL) {
 			delete index;
 			index = NULL;
 		}
 		// index
+		const clock_t index_start = clock();
 		index = index_reads (index_set, kmer_size, min_hits, max_kmer, nb_indexed_reads);
+		index_time += clock() - index_start;
 		
 		// search
 		for (size_t set_pos = 0; set_pos < search_sets.size(); set_pos++) {
+			std::cout << "\n------------------------------------------------------------------\n";
+			std::cout << "finding reads from {" << search_sets[set_pos]->get_nickname() << "} present in raw {" << index_set->get_nickname() << "}\n";
+			std::cout << "------------------------------------------------------------------\n";
+			const clock_t search_start = clock();
 			nb_found_reads[set_pos] += search_reads(index, search_sets[set_pos], kmer_size, min_hits, nb_searched_reads[set_pos]);
-			std::cout << search_sets[set_pos]->get_nickname() << " in " << index_set->get_nickname() << "\n" << "[indexed " << nb_indexed_reads << ", searched " << nb_searched_reads[set_pos] << ", shared " << nb_found_reads[set_pos] << "]\n";
+			search_times[set_pos] += clock() - search_start;
+			if (full) {
+				break;
+			}
 		}
 	}
+	for (size_t set_pos = 0; set_pos < search_sets.size(); set_pos++) {
+		std::cout << "\n------------------------------------------------------------------\n";
+		std::cout << "Reads from {" << search_sets[set_pos]->get_nickname() << "} present in raw {" << index_set->get_nickname() << "}\n";
+		std::cout << "------------------------------------------------------------------\n";
+		std::cout << "Index  time: " << float (index_time) / CLOCKS_PER_SEC << " s\n";
+		std::cout << "Search time: " << float (search_times[set_pos]) / CLOCKS_PER_SEC << " s\n";
+		std::cout << "Total  time: " << float (clock() - start_time) / CLOCKS_PER_SEC << " s\n";
+		std::cout << "[indexed " << nb_indexed_reads << ", searched " << nb_searched_reads[set_pos] << ", shared " << nb_found_reads[set_pos] << "]\n";
+		
+		(*log_files[set_pos]) << "Index  time: " << float (index_time) / CLOCKS_PER_SEC << " s\n";
+		(*log_files[set_pos]) << "Search time: " << float (search_times[set_pos]) / CLOCKS_PER_SEC << " s\n";
+		(*log_files[set_pos]) << "Total  time: " << float (clock() - start_time) / CLOCKS_PER_SEC << " s\n";
+		(*log_files[set_pos]) << "[indexed " << nb_indexed_reads << ", searched " << nb_searched_reads[set_pos] << ", shared " << nb_found_reads[set_pos] << "]\n";
+		log_files[set_pos]->close();
+		delete log_files[set_pos];
+	}
+	
+	// Only if full analysis on the first search set
+	if (full) {
+		// second pass
+		std::string log_file_name = log_path + "/" + index_set->get_nickname() + "_in_" + search_sets[0]->get_nickname() + ".log";
+		std::ofstream log_file;
+		log_file.open(log_file_name.c_str());
+		if (!log_file.good()) {
+			std::cerr << "Cannot open log file " << log_file_name << " -> exit\n";
+			exit(1);
+		}
+		search_sets[0]->apply_bv_on_files();
+		std::cout << "\n------------------------------------------------------------------\n";
+		std::cout << "finding reads from {" << index_set->get_nickname() << "} present in {raw {" << search_sets[0]->get_nickname() << "} present in raw {" << index_set->get_nickname() << "}}\n";
+		std::cout << "------------------------------------------------------------------\n";
+		nb_reads_to_index = search_sets[0]->get_total_nb_reads();
+		nb_indexed_reads = 0;
+		unsigned long nb_found_reads = 0;
+		unsigned long nb_searched_reads = 0;
+		index_set->rewind();
+		search_sets[0]->rewind();
+		index_time = 0;
+		clock_t search_time = 0;
+		start_time = clock();
+		while (nb_indexed_reads < nb_reads_to_index) {
+			if (index != NULL) {
+				delete index;
+				index = NULL;
+			}
+			const clock_t index_start = clock();
+			index = index_reads (search_sets[0], kmer_size, min_hits, max_kmer, nb_indexed_reads);
+			index_time += clock() - index_start;
+			const clock_t search_start = clock();
+			nb_found_reads += search_reads(index, index_set, kmer_size, min_hits, nb_searched_reads);
+			search_time += clock() - search_start;
+		}
+		index_set->save_bv(out_path, search_sets[0]->get_nickname());
+		index_set->apply_bv_on_files();
+		std::cout << "Index  time: " << float (index_time) / CLOCKS_PER_SEC << " s\n";
+		std::cout << "Search time: " << float (search_time) / CLOCKS_PER_SEC << " s\n";
+		std::cout << "Total  time: " << float (clock() - start_time) / CLOCKS_PER_SEC << " s\n";
+		std::cout << "[indexed " << nb_indexed_reads << ", searched " << nb_searched_reads << ", shared " << nb_found_reads << "]\n" << 100 * (float) nb_found_reads / (float) nb_reads_A <<"%\n";
+		log_file << "Index  time: " << float (index_time) / CLOCKS_PER_SEC << " s\n";
+		log_file << "Search time: " << float (search_time) / CLOCKS_PER_SEC << " s\n";
+		log_file << "Total  time: " << float (clock() - start_time) / CLOCKS_PER_SEC << " s\n";
+		log_file << "[indexed " << nb_indexed_reads << ", searched " << nb_searched_reads << ", shared " << nb_found_reads << "]\n" << 100 * (float) nb_found_reads / (float) nb_reads_A <<"%\n";
+		log_file.close();
+		
+		// third pass
+		log_file_name = log_path + "/" + search_sets[0]->get_nickname() + "_in_" + index_set->get_nickname() + ".log";
+		log_file.open(log_file_name.c_str());
+		if (!log_file.good()) {
+			std::cerr << "Cannot open log file " << log_file_name << " -> exit\n";
+			exit(1);
+		}
+		std::cout << "\n------------------------------------------------------------------\n";
+		std::cout << "finding reads from {" << search_sets[0]->get_nickname() << "} present in {raw {" << index_set->get_nickname() << "} present in {raw {" << search_sets[0]->get_nickname() << "} present in raw {" << index_set->get_nickname() << "}}}\n";
+		std::cout << "------------------------------------------------------------------\n";
+		nb_reads_to_index = index_set->get_total_nb_reads();
+		nb_indexed_reads = 0;
+		nb_found_reads = 0;
+		nb_searched_reads = 0;
+		search_sets[0]->rewind();
+		index_set->rewind();
+		index_time = 0;
+		search_time = 0;
+		start_time = clock();
+		while (nb_indexed_reads < nb_reads_to_index) {
+			if (index != NULL) {
+				delete index;
+				index = NULL;
+			}
+			const clock_t index_start = clock();
+			index = index_reads (index_set, kmer_size, min_hits, max_kmer, nb_indexed_reads);
+			index_time += clock() - index_start;
+			const clock_t search_start = clock();
+			nb_found_reads += search_reads(index, search_sets[0], kmer_size, min_hits, nb_searched_reads);
+			search_time += clock() - search_start;
+		}
+		search_sets[0]->save_bv(out_path, index_set->get_nickname());
+		std::cout << "Index  time: " << float (index_time) / CLOCKS_PER_SEC << " s\n";
+		std::cout << "Search time: " << float (search_time) / CLOCKS_PER_SEC << " s\n";
+		std::cout << "Total  time: " << float (clock() - start_time) / CLOCKS_PER_SEC << " s\n";
+		std::cout << "[indexed " << nb_indexed_reads << ", searched " << nb_searched_reads << ", shared " << nb_found_reads << "]\n" << 100 * (float) nb_found_reads / (float) nb_reads_B <<"%\n";
+		log_file << "Index  time: " << float (index_time) / CLOCKS_PER_SEC << " s\n";
+		log_file << "Search time: " << float (search_time) / CLOCKS_PER_SEC << " s\n";
+		log_file << "Total  time: " << float (clock() - start_time) / CLOCKS_PER_SEC << " s\n";
+		log_file << "[indexed " << nb_indexed_reads << ", searched " << nb_searched_reads << ", shared " << nb_found_reads << "]\n" << 100 * (float) nb_found_reads / (float) nb_reads_B <<"%\n";
+		log_file.close();
+	}
+	
 	if (index != NULL) {
 		delete index;
 	}
@@ -269,15 +416,16 @@ void print_usage ()
 	std::cerr << "\nindex_and_search, version " << version << "\n";
 	std::cerr << "Usage : ./index_and_search -i <file> -s <file> [options]\n";
 	std::cerr << "Mandatory:\n";
-	std::cerr << "\t -i <file>: A file containing the list of files to index (comma separated) - MANDATORY\n";
-	std::cerr << "\t            Each line of the file corresponds to a set of files (comma separated)\n";
+	std::cerr << "\t -i <file>: A file containing the list of files to index - MANDATORY\n";
+	std::cerr << "\t            Each line of the file corresponds to a set of files\n";
 	std::cerr << "\t -s <file>: A file containing the list of file sets to search - MANDATORY\n";
-	std::cerr << "\t            Each line of the file corresponds to a set of files (comma separated)\n";
+	std::cerr << "\t            Each line of the file corresponds to a set of files\n";
 	std::cerr << "Options:\n";
 	std::cerr << "\t -l </.../>: ABSOLUTE path to log folder\n";
 	std::cerr << "\t -o </.../>: ABSOLUTE path to output folder\n";
-	std::cerr << "\t -k <value>: Size of k-mers (value of k). [default=32]\n";
+	std::cerr << "\t -k <value>: Size of k-mers (value of k). [default=33]\n";
 	std::cerr << "\t -t <value>: Number of shared k-mers. [default=2]\n";
+	std::cerr << "\t -f: Full comparison of index set and the first searched set [default=false]\n";
 	std::cerr << "\t -h: Prints this message and exit\n";
 	std::cerr << "\t -v: Prints the version number and exit\n";
 }

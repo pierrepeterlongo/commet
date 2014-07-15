@@ -322,29 +322,34 @@ def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_direct
     
     # Plot the dendrograms (only if a matrix file was given)
     ########################################################
-    # Plain Matrix
-    command="Rscript --vanilla dendro.R "+output_directory+"matrix_plain.csv " + str(len(readSetNames))+ " " +output_directory+"dendrogram_plain.pdf"
-    print command
-    os.system(command)
-    # Percentage matrix:
-    command="Rscript --vanilla dendro.R "+output_directory+"matrix_percentage.csv " +str(len(readSetNames))+ " " +output_directory+"dendrogram_percentage.pdf"
-    os.system(command)
     # Normalized matrix:
-    command="Rscript --vanilla dendro.R "+output_directory+"matrix_normalized.csv " +str(len(readSetNames))+ " " +output_directory+"dendrogram_normalized.pdf"
+    command="Rscript --vanilla dendro.R "+output_directory+"matrix_normalized.csv "+output_directory+"dendrogram_normalized.png"
     os.system(command)
     
     
     # Plot the heatmap matrices
     # Plain Matrix
-    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_plain.csv " + output_directory+"heatmap_plain.pdf " + str(max_plain) + " " + str(max_plain_diag)+ " plain"
+    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_plain.csv " + output_directory+"heatmap_plain.png " + str(max_plain) + " " + str(max_plain_diag)+ " Plain"
     os.system(command)
     # Percentage Matrix
-    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_percentage.csv " + output_directory+"heatmap_percentage.pdf " + str(max_percentage) + " 100 percentage"
+    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_percentage.csv " + output_directory+"heatmap_percentage.png " + str(max_percentage) + " 100 Percentage"
     os.system(command)
     # Normalized Matrix
-    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_normalized.csv " + output_directory+"heatmap_normalized.pdf " + str(max_normalized) + " 100 normalized"
+    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_normalized.csv " + output_directory+"heatmap_normalized.png " + str(max_normalized) + " 100 Normalized"
     print command
     os.system(command)
+    
+    print "All Commet work is done"
+    print "\t Output csv matrices are in:"        
+    print "\t\t"+output_directory+"matrix_plain.csv"
+    print "\t\t"+output_directory+"matrix_percentage.csv"
+    print "\t\t"+output_directory+"matrix_normalized.csv"
+    print "\t Output png dendrogram is in:"       
+    print "\t\t"+output_directory+"dendrogram_normalized.png"
+    print "\t Output pdf heatmaps are in:"       
+    print "\t\t"+output_directory+"heatmap_plain.png"
+    print "\t\t"+output_directory+"heatmap_percentage.png"
+    print "\t\t"+output_directory+"heatmap_normalized.png"
     
 ##############################################################################################################
 #################### Calling functions                                                       #################
@@ -485,22 +490,10 @@ def main():
     else:
         output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, bin_dir)
         command="rm -f *"+temp_files_prefix+"*"
-        print "removing temp files: "+command
+        print "(removed temp files: "+command+")"
         os.popen(command)
     	
-        print "All Commet work is done"
-        print "\t Output csv matrices are in:"        
-        print "\t\t"+output_directory+"matrix_plain.csv"
-        print "\t\t"+output_directory+"matrix_percentage.csv"
-        print "\t\t"+output_directory+"matrix_normalized.csv"
-        print "\t Output pdf dendrograms are in:"       
-        print "\t\t"+output_directory+"dendrogram_plain.pdf"
-        print "\t\t"+output_directory+"dendrogram_percentage.pdf"
-        print "\t\t"+output_directory+"dendrogram_normalized.pdf"
-        print "\t Output pdf heatmaps are in:"       
-        print "\t\t"+output_directory+"heatmap_plain.pdf"
-        print "\t\t"+output_directory+"heatmap_percentage.pdf"
-        print "\t\t"+output_directory+"heatmap_normalized.pdf"
+        
         
     sys.exit(1)
 
