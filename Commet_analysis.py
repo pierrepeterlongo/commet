@@ -70,19 +70,6 @@ def main():
     
     output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, bin_dir)
     
-    print "All Commet work is done"
-    print "\t Output csv matrices are in:"        
-    print "\t\t"+output_directory+"matrix_plain.csv"
-    print "\t\t"+output_directory+"matrix_percentage.csv"
-    print "\t\t"+output_directory+"matrix_normalized.csv"
-    print "\t Output pdf dendrograms are in:"       
-    print "\t\t"+output_directory+"dendrogram_plain.pdf"
-    print "\t\t"+output_directory+"dendrogram_percentage.pdf"
-    print "\t\t"+output_directory+"dendrogram_normalized.pdf"
-    print "\t Output pdf heatmaps are in:"       
-    print "\t\t"+output_directory+"heatmap_plain.pdf"
-    print "\t\t"+output_directory+"heatmap_percentage.pdf"
-    print "\t\t"+output_directory+"heatmap_normalized.pdf"
 
 if __name__ == "__main__":
     main()

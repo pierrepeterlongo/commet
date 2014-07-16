@@ -240,10 +240,7 @@ def compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_dir
 def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, bin_dir):
     matrix_sum_shared_reads=[] # for each set, number of shared reads with each other sets [Matrix]
     number_reads_all_sets=[] # for each set, number of considered reads
-    max_plain=0
-    max_plain_diag=0
-    max_percentage=0
-    max_normalized=0
+    
     
     # Fill the matrices
     ####################
@@ -271,7 +268,7 @@ def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_direct
     
     
     
-    # Print the matrices
+    # Output the matrices
     #####################
     # Plain Matrix
     matrix_file=open(output_directory+"matrix_plain.csv","w")
@@ -282,8 +279,7 @@ def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_direct
     for id_set in range(len(readSetNames)):
         matrix_file.write(readSetNames[id_set])
         for id_target_set in range(len(readSetNames)):
-            if id_target_set!=id_set and matrix_sum_shared_reads[id_set][id_target_set] > max_plain: max_plain = matrix_sum_shared_reads[id_set][id_target_set]
-            if id_target_set==id_set and matrix_sum_shared_reads[id_set][id_target_set] > max_plain_diag: max_plain_diag = matrix_sum_shared_reads[id_set][id_target_set]
+            
             matrix_file.write(";"+str(matrix_sum_shared_reads[id_set][id_target_set]))
             
         matrix_file.write("\n")
@@ -298,7 +294,6 @@ def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_direct
         matrix_file.write(readSetNames[id_set])
         for id_target_set in range(len(readSetNames)):
             value=100*matrix_sum_shared_reads[id_set][id_target_set]/float(number_reads_all_sets[id_set])
-            if id_target_set!=id_set and value > max_percentage: max_percentage=value
             matrix_file.write(";"+str(value))
         matrix_file.write("\n")
     matrix_file.close()
@@ -314,28 +309,27 @@ def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_direct
         matrix_file.write(readSetNames[id_set])
         for id_target_set in range(len(readSetNames)):
             value=100*(matrix_sum_shared_reads[id_set][id_target_set]+matrix_sum_shared_reads[id_target_set][id_set])/float(number_reads_all_sets[id_set]+number_reads_all_sets[id_target_set])
-            if id_target_set!=id_set and value > max_normalized: max_normalized=value
+            
             matrix_file.write(";"+str(value))
         matrix_file.write("\n")
     matrix_file.close()
     
     
-    # Plot the dendrograms (only if a matrix file was given)
+    # Plot the dendrogram for the normalized matrix
     ########################################################
-    # Normalized matrix:
     command="Rscript --vanilla dendro.R "+output_directory+"matrix_normalized.csv "+output_directory+"dendrogram_normalized.png"
     os.system(command)
     
     
     # Plot the heatmap matrices
     # Plain Matrix
-    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_plain.csv " + output_directory+"heatmap_plain.png " + str(max_plain) + " " + str(max_plain_diag)+ " Plain"
+    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_plain.csv " +output_directory+"matrix_normalized.csv "+ output_directory+"heatmap_plain.png Plain"
     os.system(command)
     # Percentage Matrix
-    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_percentage.csv " + output_directory+"heatmap_percentage.png " + str(max_percentage) + " 100 Percentage"
+    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_percentage.csv " +output_directory+"matrix_normalized.csv "+ output_directory+"heatmap_percentage.png Percentage"
     os.system(command)
     # Normalized Matrix
-    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_normalized.csv " + output_directory+"heatmap_normalized.png " + str(max_normalized) + " 100 Normalized"
+    command="Rscript --vanilla heatmap.r "+output_directory+"matrix_normalized.csv " +output_directory+"matrix_normalized.csv "+ output_directory+"heatmap_normalized.png Normalized"
     print command
     os.system(command)
     
