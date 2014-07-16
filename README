@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ———————————————————————————————————————————————————————————————————————————
 INSTALLATION
 
-Compareads 2 has been written in C++. To compile the programs, a makefile 
+Commet's programs have been written in C++. To compile the programs, a makefile 
 using your g++ compiler is provided:
 
 make

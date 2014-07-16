@@ -31,6 +31,7 @@
 #include <ctime>
 #include <limits.h>
 #include "file_manager.h"
+#include "alphabet.h"
 
 std::string version = "2.1";
 
@@ -158,7 +159,7 @@ int main (int argc, char ** argv)
 	//
 	comment << "----------------\n";
 	comment << "Reference file\n";
-	int pos = input_file_name.rfind("/");
+	size_t pos = input_file_name.rfind("/");
 	if (pos > 0 && pos < (int) input_file_name.size()) {
 		comment << "  " << input_file_name.substr(pos + 1) << "\n";
 	} else {
@@ -247,9 +248,10 @@ void print_usage () {
 
 int number_of_N (const std::string & read)
 {
+	Alphabet * alphabet = Alphabet::getInstance();
 	int nb = 0;
 	for (int i = 0; i < (int) read.size(); i++) {
-		if (read[i] == 'N' || read[i] == 'n') {
+		if (!alphabet->is_in(read[i])) {
 			nb++;
 		}
 	}
@@ -287,11 +289,8 @@ float shannon_index(std::string & read)
 			case 'T':
 				freq[3] += 1.0;
 				break;
-			case 'N':
-				freq[4] += 1.0;
-				break;
 			default:
-				return -1.0; // This value will remove the read because a non-authorized char was found
+				freq[4] += 1.0;
 		}
 	}
 	

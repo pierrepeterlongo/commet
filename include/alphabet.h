@@ -56,7 +56,7 @@ private:
 		alpha[(int)'T'] = 1;
 		alpha[(int)'t'] = 1;
 	};
-	~Alphabet() {std::cerr << "destroy\n";};
+	~Alphabet() {};
 	
 	char alpha [255];
 };

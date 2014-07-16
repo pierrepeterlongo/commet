@@ -158,6 +158,9 @@ public:
 			exit(1);
 		}
 		memset (boolean_vector, 255, boolean_vector_char_size);
+		for (size_t i = boolean_vector_size; i < boolean_vector_char_size * 8; i++) {
+			unset(i);
+		}
 	}
 	
 	//
@@ -245,9 +248,11 @@ public:
 				}
 			}
 		}
-		for (unsigned long j = i * 8; j < (i + 1) * 8 && j < boolean_vector_size; j++) {
-			res += is_set(j);
-		}
+		char tmp = boolean_vector[boolean_vector_char_size - 1];
+		tmp = (0x55 & tmp) + (0x55 & (tmp >> 1));
+		tmp = (0x33 & tmp) + (0x33 & (tmp >> 2));
+		tmp = (0x0f & tmp) + (0x0f & (tmp >> 4));
+		res += (int) tmp;
 		if (res > boolean_vector_size) {
 			res = boolean_vector_size;
 		}
