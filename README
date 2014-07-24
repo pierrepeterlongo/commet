@@ -43,7 +43,7 @@ sudo make install
 Then, you can test Commet on the ABCDE_bench data by running the following
 command:
 
-python Commet.py ABCDE_bench/sets_config.txt
+python Commet.py ABCDE_bench/sets_config.txt -k 32
 
 ————————————————————————————————————————————————————————————————————————————————
 USER GUIDE
