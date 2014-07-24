@@ -115,7 +115,7 @@ def filterAllReads(readSetMatrix, output_directory, l, n, e, m, SGE_COMMANDS, bi
             if not SGE_COMMANDS:
                 os.system(command)
             else:
-		filtering_job_ids+=os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -N filter").read().split(" ")[2]
+		filtering_job_ids+=os.popen("echo \""+command+"\"| qsub -cwd -j y -N filter").read().split(" ")[2]
                 filtering_job_ids+=","
     return filtering_job_ids[:-1]
 
@@ -158,7 +158,7 @@ def generate_A_File_Of_File_Index_WRT_A_Set(readSetMatrix, readSetNames, output_
 def generateAFileOfSetOfFilesOriginalWithFilterBooleanVector(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, fileName, whichToIndex):
     line_id=0
     index_fofs_bv=open(fileName,'w') #
-    for line_id in range(whichToIndex):
+    for line_id in range(whichToIndex+1, len(readSetMatrix)):
         tab_line=readSetMatrix[line_id]
         tab_line_bv=bvreadSetMatrix[line_id]
         index_fofs_bv.write(readSetNames[line_id]+":")
@@ -171,6 +171,11 @@ def generateAFileOfSetOfFilesOriginalWithFilterBooleanVector(readSetMatrix, bvre
     index_fofs_bv.close()
     
 
+##############################################################################################################
+#################### Remove non alphabetic characteres                                       #################
+##############################################################################################################
+def StripNonAlpha(s):
+    return "".join(c for c in s if c.isalpha())
             
 
 ##############################################################################################################
@@ -178,7 +183,6 @@ def generateAFileOfSetOfFilesOriginalWithFilterBooleanVector(readSetMatrix, bvre
 #################### And finish symetrical comparisons                                       #################
 ##############################################################################################################
 def compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, temp_files_prefix, index_reference_set, k, t, SGE_COMMANDS, filtering_job_ids, bin_dir):
-    
     kt_options=" -t "+str(t)+" -k "+str(k)+" "
     
     ########### PART all in Si ############
@@ -189,20 +193,20 @@ def compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_dir
     queries_fof_file_name="queries_for_index_"+readSetNames[index_reference_set]+"_"+temp_files_prefix+".txt"
     generateAFileOfSetOfFilesOriginalWithFilterBooleanVector(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, queries_fof_file_name, index_reference_set)
     index_fof_file_name=readSetNames[index_reference_set]+"_"+temp_files_prefix+".txt"
-    command=bin_dir+"index_and_search -i "+index_fof_file_name + " -s "+queries_fof_file_name+ " -o "+output_directory+kt_options
+    command=bin_dir+"index_and_search -i "+index_fof_file_name + " -s "+queries_fof_file_name+ " -o "+output_directory+kt_options+" -l "+output_directory
     last_job_ids=""
     print "All in "+ readSetNames[index_reference_set]+": Command="+command
     ref_job_id=""
     if SGE_COMMANDS:
         if filtering_job_ids!=None:
-            ref_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(filtering_job_ids)+" -N \"log_all_in_"+str(index_reference_set)+"\"").read().split(" ")[2])
+            ref_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -j y -hold_jid "+str(filtering_job_ids)+" -N \"log_all_in_"+StripNonAlpha(readSetNames[index_reference_set])+"\"").read().split(" ")[2])
         else:
-            ref_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -N \"log_all_in_"+str(index_reference_set)+"\"").read().split(" ")[2])
+            ref_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -j y -N \"log_all_in_"+StripNonAlpha(readSetNames[index_reference_set])+"\"").read().split(" ")[2])
     else:
         os.popen(command)
     
     # for each couple: Si, X : X in (Si in X)
-    for i in range(index_reference_set):
+    for i in range(index_reference_set+1, len(readSetNames)):
         # PART Si_in_X
     
         
@@ -211,11 +215,11 @@ def compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_dir
         index_file_name="index_"+readSetNames[i]+"_previous_"+readSetNames[index_reference_set]+"_"+temp_files_prefix+".txt"
         generate_A_File_Of_File_Index_WRT_A_Set(readSetMatrix, readSetNames, output_directory, index_file_name, index_reference_set, i)
         query_file_name=readSetNames[index_reference_set]+"_"+temp_files_prefix+".txt"
-        command=bin_dir+"index_and_search -i "+index_file_name+" -s "+query_file_name+ " -o "+output_directory+kt_options
+        command=bin_dir+"index_and_search -i "+index_file_name+" -s "+query_file_name+ " -o "+output_directory+kt_options+" -l "+output_directory
         print " "+readSetNames[index_reference_set]+" in ("+ readSetNames[i]+" in "+readSetNames[index_reference_set]+"): Command="+command
         X_in_Si_job_id=""
         if SGE_COMMANDS:
-            X_in_Si_job_id=os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(ref_job_id)+" -N \"log_"+str(index_reference_set)+"_in_"+str(i)+"\"").read().split(" ")[2]
+            X_in_Si_job_id=os.popen("echo \""+command+"\"| qsub -cwd -j y -hold_jid "+str(ref_job_id)+" -N \"log_"+StripNonAlpha(readSetNames[index_reference_set])+"_in_"+str(i)+"\"").read().split(" ")[2]
         else:
             os.popen(command)
         
@@ -224,10 +228,10 @@ def compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_dir
         index_file_name="index_"+readSetNames[index_reference_set]+"_previous_"+readSetNames[i]+"_"+temp_files_prefix+".txt"
         generate_A_File_Of_File_Index_WRT_A_Set(readSetMatrix, readSetNames, output_directory, index_file_name, i, index_reference_set)
         query_file_name=readSetNames[i]+"_"+temp_files_prefix+".txt"
-        command=bin_dir+"index_and_search -i "+index_file_name+" -s "+query_file_name+ " -o "+output_directory+kt_options
+        command=bin_dir+"index_and_search -i "+index_file_name+" -s "+query_file_name+ " -o "+output_directory+kt_options+" -l "+output_directory
         print " "+readSetNames[i]+"_in_("+readSetNames[index_reference_set]+" in ("+ readSetNames[i]+" in "+readSetNames[index_reference_set]+")): Command="+command
         if SGE_COMMANDS:
-            last_job_ids+=os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(X_in_Si_job_id)+" -N \"log_"+str(i)+"_in_"+str(index_reference_set)+"\"").read().split(" ")[2]+","
+            last_job_ids+=os.popen("echo \""+command+"\"| qsub -cwd -j y -hold_jid "+str(X_in_Si_job_id)+" -N \"log_"+StripNonAlpha(readSetNames[i])+"_in_"+StripNonAlpha(readSetNames[index_reference_set])+"\"").read().split(" ")[2]+","
         else:
             os.popen(command)
         
@@ -363,13 +367,13 @@ def main():
                         help="directory in which results will be output [default: \"output_commet\"]", default="output_commet/" )
                         
     parser.add_argument("-k", type=int, dest='k', 
-                        help="kmer size [default: 32]", default=32 )
+                        help="kmer size [default: 33]", default=33 )
                         
     parser.add_argument("-t", type=int, dest='t',
                         help="Minimal number of shared k-mers [default: 2]", default=2 )
     
     parser.add_argument("-l", type=int, dest='l',
-                        help=" minimal length a read should have to be kept [default=0]", default=0 )
+                        help=" minimal length a read should have to be kept [default=k*t]", default=0 )
    
     parser.add_argument("-n", type=int, dest='n',
                         help="maximal number of Ns a read should contain to be kept. [default=any]", default=-1 )
@@ -390,7 +394,7 @@ def main():
     output_directory=str(args.directory)
     if output_directory[-1]!='/': output_directory+="/"
     bin_dir=str(args.binary_directory)
-    print "OIEHZFOIHJ"+bin_dir[-1]
+    # print "OIEHZFOIHJ"+bin_dir[-1]
     if bin_dir[-1]!='/': 
         bin_dir+="/"
     
@@ -417,6 +421,13 @@ def main():
         if exception.errno != errno.EEXIST:
             raise
 
+
+    if l<k*t:
+        if l != 0:
+            print "l should be at least k*t. "+str(l)+" is too small with k="+str(k)+" and t="+str(t)+". ",
+        l=k*t
+        print "I use l="+str(l)+"."
+        
     print "k="+str(k), 
     
     print " t="+str(t),
@@ -466,7 +477,8 @@ def main():
     
     # Compare all against all
     alljobids=""
-    for ref_id in range(len(readSetMatrix)-1,0,-1):
+#    for ref_id in range(len(readSetMatrix)-1,0,-1):
+    for ref_id in range(len(readSetMatrix)-1):
         jobids=compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, temp_files_prefix, ref_id, k, t, SGE_COMMANDS, filtering_job_ids, bin_dir)
         alljobids+=jobids
         
@@ -479,7 +491,7 @@ def main():
         last_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(alljobids)+" -N \"clean\"").read().split(" ")[2])
         
         print "All Commet jobs are launched - once last job ("+str(last_job_id)+") is over, type the following command in order to analyze the .bv results :"
-        command="./Commet_analysis.py "+input_file+" -o "+output_directory+" -b "+bin_dir
+        command="python Commet_analysis.py "+input_file+" -o "+output_directory+" -b "+bin_dir
         print "\t"+command
     else:
         output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, bin_dir)

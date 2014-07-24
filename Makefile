@@ -26,30 +26,39 @@
 CFLAGS=-O3 -Wall -Iinclude/
 LDFLAGS=-lm -lz
 CC=g++
+HDRS= $(wildcard include/*.h)
 
 ifeq ($(prof),1)
     CFLAGS= -O3 -pg -g
 endif
 
 
-all: bin/index_and_search bin/filter_reads bin/extract_reads bin/bvop
+all: bin/index_and_search bin/filter_reads bin/extract_reads bin/bvop bin/compare_reads
 
-bin/index_and_search: src/index_and_search.cpp
+bin/index_and_search: src/index_and_search.cpp $(HDRS)
+	@ if [ ! -d bin ]; then mkdir bin; fi
 	$(CC) -o bin/index_and_search src/index_and_search.cpp $(LDFLAGS) $(CFLAGS)
 
-bin/filter_reads: src/filter_reads.cpp
+bin/filter_reads: src/filter_reads.cpp $(HDRS)
+	@ if [ ! -d bin ]; then mkdir bin; fi
 	$(CC) -o bin/filter_reads src/filter_reads.cpp $(LDFLAGS) $(CFLAGS)
 
-bin/extract_reads: src/extract_reads.cpp
+bin/compare_reads: src/compare_reads.cpp $(HDRS)
+	@ if [ ! -d bin ]; then mkdir bin; fi
+	$(CC) -o bin/compare_reads src/compare_reads.cpp $(LDFLAGS) $(CFLAGS)
+
+bin/extract_reads: src/extract_reads.cpp $(HDRS)
+	@ if [ ! -d bin ]; then mkdir bin; fi
 	$(CC) -o bin/extract_reads src/extract_reads.cpp $(LDFLAGS) $(CFLAGS)
 
-bin/bvop: src/bvop.cpp
+bin/bvop: src/bvop.cpp $(HDRS)
+	@ if [ ! -d bin ]; then mkdir bin; fi
 	$(CC) -o bin/bvop src/bvop.cpp $(LDFLAGS) $(CFLAGS)
 
 install:
-	cp filter_reads /usr/local/bin/
-	cp extract_reads /usr/local/bin/
-	cp bvop /usr/local/bin/
-	cp index_and_search /usr/local/bin/
+	cp bin/filter_reads /usr/local/bin/
+	cp bin/extract_reads /usr/local/bin/
+	cp bin/bvop /usr/local/bin/
+	cp bin/index_and_search /usr/local/bin/
 clean:
 	@ rm bin/*

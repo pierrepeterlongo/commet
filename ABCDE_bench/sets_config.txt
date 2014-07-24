@@ -1,0 +1,3 @@
+ set1 : ABCDE_bench/A.fa 
+ set2: ABCDE_bench/B.fa; ABCDE_bench/C.fa
+set3 : ABCDE_bench/D.fa    

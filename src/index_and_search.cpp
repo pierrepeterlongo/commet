@@ -417,15 +417,14 @@ void print_usage ()
 	std::cerr << "Usage : ./index_and_search -i <file> -s <file> [options]\n";
 	std::cerr << "Mandatory:\n";
 	std::cerr << "\t -i <file>: A file containing the list of files to index - MANDATORY\n";
-	std::cerr << "\t            Each line of the file corresponds to a set of files\n";
-	std::cerr << "\t -s <file>: A file containing the list of file sets to search - MANDATORY\n";
-	std::cerr << "\t            Each line of the file corresponds to a set of files\n";
+	std::cerr << "\t -s <file>: A file containing the list of files to search - MANDATORY\n";
+	std::cerr << "\t            Each line of the file corresponds to a set of files to search\n";
 	std::cerr << "Options:\n";
 	std::cerr << "\t -l </.../>: ABSOLUTE path to log folder\n";
 	std::cerr << "\t -o </.../>: ABSOLUTE path to output folder\n";
 	std::cerr << "\t -k <value>: Size of k-mers (value of k). [default=33]\n";
 	std::cerr << "\t -t <value>: Number of shared k-mers. [default=2]\n";
 	std::cerr << "\t -f: Full comparison of index set and the first searched set [default=false]\n";
-	std::cerr << "\t -h: Prints this message and exit\n";
-	std::cerr << "\t -v: Prints the version number and exit\n";
+	std::cerr << "\t -h: Prints this message\n";
+	std::cerr << "\t -v: Prints the version number\n";
 }

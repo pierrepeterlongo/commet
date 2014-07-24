@@ -1,106 +1,157 @@
 Contributors : 
-  Pierre PETERLONGO, pierre.peterlongo@inria.fr [12/06/13]
-  Nicolas MAILLET, nicolas.maillet@inria.fr     [12/06/13]
-  Guillaume Collet, guillaume@gcollet.fr        [27/05/14]
+  Pierre PETERLONGO, pierre.peterlongo@inria.fr [24/07/14]
+  Nicolas MAILLET, nicolas.maillet@inria.fr     [24/07/14]
+  Guillaume Collet, guillaume@gcollet.fr        [24/07/14]
 
-This software is a computer program whose purpose is to find all the
-similar reads between two set of NGS reads. It also provide a similarity
-score between the two samples.
+This software is a computer program whose purpose is to find all the similar
+reads between two set of NGS reads. It also provide a similarity score between
+the two samples.
 
 Copyright (C) 2014  INRIA
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or any later version.
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
 
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License along
+with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-———————————————————————————————————————————————————————————————————————————
+————————————————————————————————————————————————————————————————————————————————
+REQUIREMENTS
+
+ - C++ compiler (g++-4.9, clang-3.2…)
+ - python 2.7
+ - R
+
+————————————————————————————————————————————————————————————————————————————————
 INSTALLATION
 
-Commet's programs have been written in C++. To compile the programs, a makefile 
-using your g++ compiler is provided:
+Commet's applications have been written in C++. 
+To compile those programs, a makefile is provided using g++:
 
 make
 
 If you want to install in /usr/local/bin, run with root permissions (use sudo):
 
 make
-make install
-or
 sudo make install
 
-Then, you can test the executables in directory ABC_bench where you'll find 
-the run_ABC.sh script.
+Then, you can test Commet on the ABCDE_bench data by running the following
+command:
 
-———————————————————————————————————————————————————————————————————————————
+python Commet.py ABCDE_bench/sets_config.txt
+
+————————————————————————————————————————————————————————————————————————————————
 USER GUIDE
 
-A user guide is provided in the directory named doc. Each tool is described
-more than in this README file.
+For complete descriptions of modules and usage, a user guide is provided in the 
+doc directory.
 
-———————————————————————————————————————————————————————————————————————————
-This package contains four applications :
+————————————————————————————————————————————————————————————————————————————————
+SCRIPTS
+
+Commet.py:
+	- input:
+		- A file containing a list of read sets (see below)
+	- output:
+		- a bit vector for each intersection of pairs of read sets
+		- 3 matrices in CVS format
+			- plain: line i, column j contains the number of reads 
+			  from set i similar to at least one read of set j
+			- percentage: line i, column j contains the percentage
+			  of reads from set i similar to at least one read of
+			  set j
+			- normalized: line i, column j contains the percentage
+			  of reads similar between sets i and j with respect to
+			  the total number of reads in sets i and j.
+		- 3 heatmaps (png format), computed from the three previously
+		  mentioned matrices
+		- A dendrogram (png format) of input reads obtained from the
+		  normalized matrix, by hierarchical complete clusterization of
+		  all input reads.
+	- misc.:
+		- This script needs python 2.7
+		- This script can parallelize computations on SGE clusters using
+		  the --sge option. In this case the analysis of the CVS
+		  matrices generating the four png figures (three heatmaps and
+		  one dendrogram) is performed once all jobs are finished using
+		  the Commet_analysis.py script.
+
+
+————————————————————————————————————————————————————————————————————————————————
+LISTS OF READ SETS
+
+Read sets may be composed of several files in different format (fasta, fastq,
+gzip). To give these read sets to Commet, we use the following format:
+
+	- Each line corresponds to a read set.
+	- Each line begins with an identifier for the set directly followed by a
+	  colon (:).
+	- Then, each file of a set is separated by a semicolon (;).
+	- A bit vector may be associated to a file by adding its name after a
+	  comma (,).
+	
+Example:
+	Name1:path_set1.1.fq.gz;path_set_1.2.fq.gz,bv1.2.bv;path_set1.3.fq;...
+	Name2:path_set2.1.fq.gz;path_set_2.2.fq.gz
+	Name3:path_set3.1.fq,bv3.1.bv;path_set_3.2.fq,bv3.2.bv;path_set3.3.fq.gz
+	...
+————————————————————————————————————————————————————————————————————————————————
+APPLICATIONS SUMMARY (compiled in the 'bin' directory)
 
 filter_reads
-compare_reads
+index_and_search
 extract_reads
 bvop
 
-———————————————————————————————————————————————————————————————————————————
+————————————————————————————————————————————————————————————————————————————————
 FILTER_READS
 
   - input: 
-    - One file containing reads (nucleotide sequences) in fasta or fastq format. 
+    - A file containing reads (nucleotide sequences) in fasta or fastq format. 
       The input file may be compressed with gzip algorithm.
-    - Three parameters for read selection : - minimum size          [default=0]
-                                            - maximum number of N   [default=MAX_INT]
-                                            - minimum Shannon index [default=0]
+    - Four parameters for selection : - minimum size           [default=0]
+                                      - maximum number of N    [default=any]
+                                      - minimum Shannon index  [default=0]
+                                      - maximum selected reads [default=all].
 
   - output: 
-    - One file containing a vector of bits. 
-      To each bit of the vector corresponds a read in the input file. 
-      If the bit is 1, then the read was not removed by the filter, if 0, the read was removed.
-
-———————————————————————————————————————————————————————————————————————————
-EXTRACT_READS
-
-  - input:
-    - One file containing reads (nucleotide sequences) in fasta or fastq format.
-      The input file may be compressed with gzip algorithm.
-    - One file containing a vector of bits of the same size.
-
-  - output:
-    - One file containing the reads that correspond to a 1 in the vector of bits
-
-
-———————————————————————————————————————————————————————————————————————————
-COMPARE_READS
+    - A file containing a vector of bits. 
+      Each bit of the vector corresponds to a read in the input file. 
+      If the bit is 1 then the read is selected, if 0 the read was filtered out.
+	  
+————————————————————————————————————————————————————————————————————————————————
+INDEX_AND_SEARCH 
 
   - input:
-    - Two files (A and B) containing reads (nucleotide sequences) in fasta or fastq format. 
-      The input files may be compressed with gzip algorithm.
-    - Options : for each file, a boolean vector that represents the filtered reads
+    - A file read sets representing the reference (only the first set is used)
+    - A file read sets representing the queries (-s) (all sets are searched)
 
   - output:
-    - Two files containing the vectors of bits corresponding to:
-      - reads from A found in B 
-      - reads from B found in A
-
-———————————————————————————————————————————————————————————————————————————
+    - for each read file in the queries, a bit vector stores reads that share 
+      enough similarity with reads from the reference.
+	  
+————————————————————————————————————————————————————————————————————————————————
 BVOP
 
   - input:
-    - One file containing a vector of bits.
-    - Options : another file containing a vector of bits depending on the operation.
+    - A file containing a vector of bits.
+    - A logical operation to perform (with another bit vector optionaly)
 
   - output:
-    - One file containing a vector of bits.
+    - A file containing the resulting bit vector.
+	
+————————————————————————————————————————————————————————————————————————————————
+EXTRACT_READS
 
+  - input:
+      - A file containing reads (nucleotide sequences) in fasta or fastq format. 
+        The input file may be compressed with gzip algorithm.
+      - A file containing a vector of bits of the same size.
+
+    - output:
+      - A file containing only reads that correspond to a 1 in the bit vector
