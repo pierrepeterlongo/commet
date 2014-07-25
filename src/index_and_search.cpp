@@ -235,21 +235,6 @@ int main (int argc, char ** argv)
 	}
 	
 	////////////////////////////////////////////////////////////
-	// Create a log file for each comparison
-	//
-	std::vector<std::ofstream *> log_files;
-	for (size_t set_pos = 0; set_pos < search_sets.size(); set_pos++) {
-		std::string fname = log_path + "/" + search_sets[set_pos]->get_nickname() + "_in_" + index_set->get_nickname() + ".log";
-		std::ofstream * log_file = new std::ofstream();
-		log_file->open(fname.c_str());
-		if (!log_file->good()) {
-			std::cerr << "Cannot open log file : " << fname << "\n";
-			exit(1);
-		}
-		log_files.push_back(log_file);
-	}
-	
-	////////////////////////////////////////////////////////////
 	// Create the index in a BloomFilter
 	// and
 	// Search files in search_sets
@@ -292,6 +277,7 @@ int main (int argc, char ** argv)
 		}
 	}
 	for (size_t set_pos = 0; set_pos < search_sets.size(); set_pos++) {
+		
 		std::cout << "\n------------------------------------------------------------------\n";
 		std::cout << "Reads from {" << search_sets[set_pos]->get_nickname() << "} present in raw {" << index_set->get_nickname() << "}\n";
 		std::cout << "------------------------------------------------------------------\n";
@@ -300,12 +286,19 @@ int main (int argc, char ** argv)
 		std::cout << "Total  time: " << float (clock() - start_time) / CLOCKS_PER_SEC << " s\n";
 		std::cout << "[indexed " << nb_indexed_reads << ", searched " << nb_searched_reads[set_pos] << ", shared " << nb_found_reads[set_pos] << "]\n";
 		
-		(*log_files[set_pos]) << "Index  time: " << float (index_time) / CLOCKS_PER_SEC << " s\n";
-		(*log_files[set_pos]) << "Search time: " << float (search_times[set_pos]) / CLOCKS_PER_SEC << " s\n";
-		(*log_files[set_pos]) << "Total  time: " << float (clock() - start_time) / CLOCKS_PER_SEC << " s\n";
-		(*log_files[set_pos]) << "[indexed " << nb_indexed_reads << ", searched " << nb_searched_reads[set_pos] << ", shared " << nb_found_reads[set_pos] << "]\n";
-		log_files[set_pos]->close();
-		delete log_files[set_pos];
+		// Write on log file
+		std::string fname = log_path + "/" + search_sets[set_pos]->get_nickname() + "_in_" + index_set->get_nickname() + ".log";
+		std::ofstream log_file;
+		log_file.open(fname.c_str());
+		if (!log_file.good()) {
+			std::cerr << "Cannot open log file : " << fname << "\n";
+			exit(1);
+		}
+		log_file << "Index  time: " << float (index_time) / CLOCKS_PER_SEC << " s\n";
+		log_file << "Search time: " << float (search_times[set_pos]) / CLOCKS_PER_SEC << " s\n";
+		log_file << "Total  time: " << float (clock() - start_time) / CLOCKS_PER_SEC << " s\n";
+		log_file << "[indexed " << nb_indexed_reads << ", searched " << nb_searched_reads[set_pos] << ", shared " << nb_found_reads[set_pos] << "]\n";
+		log_file.close();
 	}
 	
 	// Only if full analysis on the first search set
