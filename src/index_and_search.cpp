@@ -32,7 +32,6 @@
 #include "boolean_vector.h"
 #include "set_parser.h"
 
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <limits.h>
@@ -324,7 +323,7 @@ int main (int argc, char ** argv)
 		index_time = 0;
 		clock_t search_time = 0;
 		start_time = clock();
-		while (nb_indexed_reads < nb_reads_to_index) {
+		while (search_sets[0]->get_reads_count() < nb_reads_to_index) {
 			if (index != NULL) {
 				delete index;
 				index = NULL;
@@ -367,7 +366,7 @@ int main (int argc, char ** argv)
 		index_time = 0;
 		search_time = 0;
 		start_time = clock();
-		while (nb_indexed_reads < nb_reads_to_index) {
+		while (index_set->get_reads_count() < nb_reads_to_index) {
 			if (index != NULL) {
 				delete index;
 				index = NULL;

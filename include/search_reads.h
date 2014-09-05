@@ -36,7 +36,7 @@ unsigned long search_reads (const BloomFilter * index, FileManager * search_file
 	// Search reads from search_file_manager in the indexed reads
 	HashKey hash (kmer_size);
 	Alphabet * alphabet = Alphabet::getInstance();
-	
+	nb_searched_reads = 0;
 	unsigned long nb_found_reads = 0;
 	search_file_manager->rewind();
 	std::string & current_read_to_search = search_file_manager->get_next_read_to_compare();
