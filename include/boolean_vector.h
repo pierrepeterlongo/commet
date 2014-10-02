@@ -463,4 +463,3 @@ public:
 };
 
 #endif /* BOOLEAN_VECTOR_H_ */
-

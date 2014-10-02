@@ -202,4 +202,3 @@ void print_usage (){
 	std::cout << "\t -v: prints the version number.\n\n";
     exit(0);
 }
-
