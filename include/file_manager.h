@@ -216,6 +216,7 @@ public:
 	
 	virtual void rewind () {
 		current_file = 0;
+		nb_seen_reads = 0;
 		for (std::vector<ReadFile *>::iterator it = files.begin(); it != files.end(); it++) {
 			(*it)->rewind();
 		}
