@@ -86,18 +86,26 @@ public:
 	// Get the next read in the current file or try next file if no more read in current file
 	// If no more file, return an empty read
 	virtual std::string & get_next_read_to_compare () {
-		if (current_file >= (int) files.size()) {
-			nb_seen_reads++;
-			return files[current_file - 1]->get_next_read();
-		}
 		std::string & tmp_read = files[current_file]->get_next_read();
-		while (tmp_read.empty()) {
+		if (tmp_read.empty()) {
 			current_file++;
 			nb_tagged_reads = 0;
 			if (current_file >= (int) files.size()) {
-				break;
+				nb_seen_reads++;
+				return files[current_file - 1]->get_next_read();
 			}
 			tmp_read = files[current_file]->get_next_read();
+		}
+		while (file_bvs[current_file].is_set(files[current_file]->get_read_pos())) {
+			tmp_read = files[current_file]->get_next_read();
+			if (tmp_read.empty()) {
+				current_file++;
+				nb_tagged_reads = 0;
+				if (current_file >= (int) files.size()) {
+					break;
+				}
+				tmp_read = files[current_file]->get_next_read();
+			}
 		}
 		nb_seen_reads++;
 		return tmp_read;
