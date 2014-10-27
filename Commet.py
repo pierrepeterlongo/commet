@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Contributors :
 #   Pierre PETERLONGO, pierre.peterlongo@inria.fr [12/06/13]
 #   Nicolas MAILLET, nicolas.maillet@inria.fr     [12/06/13]
@@ -21,8 +22,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-#!/usr/bin/env python
 
 import os
 import sys
