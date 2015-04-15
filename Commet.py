@@ -426,7 +426,7 @@ def main():
     if l<k*t:
         if l != 0:
             print "l should be at least k*t. "+str(l)+" is too small with k="+str(k)+" and t="+str(t)+". ",
-        l=k*t
+            l=k*t
         print "I use l="+str(l)+"."
         
     print "k="+str(k), 
