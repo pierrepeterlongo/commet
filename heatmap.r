@@ -43,13 +43,13 @@ mini=max(q25-1.5*(q75-q25),0)
 maxi=min(q75+1.5*(q75-q25),trueMax)
 diff=maxi-mini
 
-palette=colorRampPalette(c("green", "yellow", "red", "brown", "grey23"))(n = 5*n-1)
-
- breaks=c(seq(mini,mini+diff/4,length=n), # for green
+ breaks=unique(c(seq(mini,mini+diff/4,length=n), # for green
                 seq(mini+diff/4,mini+diff/2,length=n), # for yellow
                 seq(mini+diff/2,mini+3*diff/4,length=n), # for red
                 seq(mini+3*diff/4,maxi,length=n), # for brown
-                seq(maxi,trueMax,length=n)) # for black
+                seq(maxi,trueMax,length=n))) # for black
+
+palette=colorRampPalette(c("green", "yellow", "red", "brown", "grey23"))(n = length(breaks)-1)
 
  par(fig=c(0.2,1,0,0.8))
 
