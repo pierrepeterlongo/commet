@@ -112,11 +112,11 @@ def filterAllReads(readSetMatrix, output_directory, l, n, e, m, SGE_COMMANDS, bi
             m_option=" -m "+str(local_m)
         for i in range(len(tab_line)):
             command=bin_dir+"filter_reads "+tab_line[i]+options+m_option+" -o "+output_directory+os.path.basename(tab_line[i])+".bv"
-            print "Filtering command: "+command
+            print ("Filtering command: "+command)
             if not SGE_COMMANDS:
                 os.system(command)
             else:
-		filtering_job_ids+=os.popen("echo \""+command+"\"| qsub -cwd -j y -N filter").read().split(" ")[2]
+                filtering_job_ids+=os.popen("echo \""+command+"\"| qsub -cwd -j y -N filter").read().split(" ")[2]
                 filtering_job_ids+=","
     return filtering_job_ids[:-1]
 
@@ -196,7 +196,8 @@ def compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_dir
     index_fof_file_name=readSetNames[index_reference_set]+"_"+temp_files_prefix+".txt"
     command=bin_dir+"index_and_search -i "+index_fof_file_name + " -s "+queries_fof_file_name+ " -o "+output_directory+kt_options+" -l "+output_directory
     last_job_ids=""
-    print "All in "+ readSetNames[index_reference_set]+": Command="+command
+    print ("All in "+ readSetNames[index_reference_set]+": Command="+command)
+
     ref_job_id=""
     if SGE_COMMANDS:
         if filtering_job_ids!=None:
@@ -204,7 +205,7 @@ def compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_dir
         else:
             ref_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -j y -N \"log_all_in_"+StripNonAlpha(readSetNames[index_reference_set])+"\"").read().split(" ")[2])
     else:
-        os.popen(command)
+        os.system(command)
     
     # for each couple: Si, X : X in (Si in X)
     for i in range(index_reference_set+1, len(readSetNames)):
@@ -217,12 +218,12 @@ def compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_dir
         generate_A_File_Of_File_Index_WRT_A_Set(readSetMatrix, readSetNames, output_directory, index_file_name, index_reference_set, i)
         query_file_name=readSetNames[index_reference_set]+"_"+temp_files_prefix+".txt"
         command=bin_dir+"index_and_search -i "+index_file_name+" -s "+query_file_name+ " -o "+output_directory+kt_options+" -l "+output_directory
-        print " "+readSetNames[index_reference_set]+" in ("+ readSetNames[i]+" in "+readSetNames[index_reference_set]+"): Command="+command
+        print (" "+readSetNames[index_reference_set]+" in ("+ readSetNames[i]+" in "+readSetNames[index_reference_set]+"): Command="+command)
         X_in_Si_job_id=""
         if SGE_COMMANDS:
             X_in_Si_job_id=os.popen("echo \""+command+"\"| qsub -cwd -j y -hold_jid "+str(ref_job_id)+" -N \"log_"+StripNonAlpha(readSetNames[index_reference_set])+"_in_"+str(i)+"\"").read().split(" ")[2]
         else:
-            os.popen(command)
+            os.system(command)
         
         # Computes Si in (X in (Si in X))
         #################################
@@ -230,13 +231,12 @@ def compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_dir
         generate_A_File_Of_File_Index_WRT_A_Set(readSetMatrix, readSetNames, output_directory, index_file_name, i, index_reference_set)
         query_file_name=readSetNames[i]+"_"+temp_files_prefix+".txt"
         command=bin_dir+"index_and_search -i "+index_file_name+" -s "+query_file_name+ " -o "+output_directory+kt_options+" -l "+output_directory
-        print " "+readSetNames[i]+"_in_("+readSetNames[index_reference_set]+" in ("+ readSetNames[i]+" in "+readSetNames[index_reference_set]+")): Command="+command
+        print (" "+readSetNames[i]+"_in_("+readSetNames[index_reference_set]+" in ("+ readSetNames[i]+" in "+readSetNames[index_reference_set]+")): Command="+command)
         if SGE_COMMANDS:
             last_job_ids+=os.popen("echo \""+command+"\"| qsub -cwd -j y -hold_jid "+str(X_in_Si_job_id)+" -N \"log_"+StripNonAlpha(readSetNames[i])+"_in_"+StripNonAlpha(readSetNames[index_reference_set])+"\"").read().split(" ")[2]+","
         else:
-            os.popen(command)
-        
-        
+            os.system(command)
+               
     return last_job_ids
 
 ##############################################################################################################
@@ -259,7 +259,7 @@ def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_direct
         
         # detect the number of shared reads with all other sets:
         array_sum_shared_reads=[]
-        print readSetNames
+        print (readSetNames)
         for id_target_set in range(len(readSetNames)): # for each target set
             if id_set == id_target_set:
                 array_sum_shared_reads.append(number_reads_all_sets[id_set])
@@ -335,20 +335,90 @@ def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_direct
     os.system(command)
     # Normalized Matrix
     command="Rscript --vanilla heatmap.r "+output_directory+"matrix_normalized.csv " +output_directory+"matrix_normalized.csv "+ output_directory+"heatmap_normalized.png Normalized"
-    print command
+    print (command)
     os.system(command)
     
-    print "All Commet work is done"
-    print "\t Output csv matrices are in:"        
-    print "\t\t"+output_directory+"matrix_plain.csv"
-    print "\t\t"+output_directory+"matrix_percentage.csv"
-    print "\t\t"+output_directory+"matrix_normalized.csv"
-    print "\t Output png dendrogram is in:"       
-    print "\t\t"+output_directory+"dendrogram_normalized.png"
-    print "\t Output pdf heatmaps are in:"       
-    print "\t\t"+output_directory+"heatmap_plain.png"
-    print "\t\t"+output_directory+"heatmap_percentage.png"
-    print "\t\t"+output_directory+"heatmap_normalized.png"
+    print ("All Commet work is done")
+    print ("\t Output csv matrices are in:"        )
+    print ("\t\t"+output_directory+"matrix_plain.csv")
+    print ("\t\t"+output_directory+"matrix_percentage.csv")
+    print ("\t\t"+output_directory+"matrix_normalized.csv")
+    print ("\t Output png dendrogram is in:"       )
+    print ("\t\t"+output_directory+"dendrogram_normalized.png")
+    print ("\t Output pdf heatmaps are in:"       )
+    print ("\t\t"+output_directory+"heatmap_plain.png")
+    print ("\t\t"+output_directory+"heatmap_percentage.png")
+    print ("\t\t"+output_directory+"heatmap_normalized.png")
+    
+    
+
+##############################################################################################################
+#################### Output the results vectors in case of one_vs_all option called (csv)    #################
+##############################################################################################################
+def output_vectors (readSetvector, bvreadSetvector, readSetNames, output_directory, bin_dir):
+    vector_sum_shared_reads=[] # for each set, number of shared reads with each other sets [vector]
+    number_reads_all_sets=[] # for each set, number of considered reads
+    
+    
+    # Fill the vectors
+    ####################
+    id_set=0
+    # detect the number of involved reads per line of the input
+    number_reads=0
+    for read_set_bv in bvreadSetvector[id_set]:
+        command=bin_dir+"bvop "+read_set_bv+" -i"
+        number_reads+=int(os.popen(command).read().split("\n")[-2].split()[0])
+    number_reads_all_sets.append(number_reads)
+    
+    # detect the number of shared reads with all other sets:
+    array_sum_shared_reads=[]
+    print (readSetNames)
+    for id_target_set in range(len(readSetNames)): # for each target set
+        if id_set == id_target_set:
+            array_sum_shared_reads.append(number_reads_all_sets[id_set])
+            continue;
+        number_shared_reads=0
+        for read_set in readSetvector[id_set]: # for each read set of the surrent set of read sets :)
+            command=bin_dir+"bvop "+output_directory+os.path.basename(read_set)+"_in_"+readSetNames[id_target_set]+".bv -i"
+            number_shared_reads+=int(os.popen(command).read().split("\n")[-2].split()[0]) # get the  number of shared reads
+        array_sum_shared_reads.append(number_shared_reads)
+    vector_sum_shared_reads.append(array_sum_shared_reads)
+    
+    
+    
+    # Output the matrices
+    #####################
+    # Plain vector
+    vector_file=open(output_directory+"vector_plain.csv","w")
+        
+    for set_name in readSetNames:
+        vector_file.write(";"+set_name)
+    vector_file.write("\n")
+
+    vector_file.write(readSetNames[id_set])
+    for id_target_set in range(len(readSetNames)):
+        
+        vector_file.write(";"+str(vector_sum_shared_reads[id_set][id_target_set]))
+        
+    vector_file.write("\n")
+    vector_file.close()
+    
+    # Percentage vector:
+    vector_file=open(output_directory+"vector_percentage.csv","w")
+    for set_name in readSetNames:
+        vector_file.write(";"+set_name)
+    vector_file.write("\n")
+    vector_file.write(readSetNames[id_set])
+    for id_target_set in range(len(readSetNames)):
+        value=100*vector_sum_shared_reads[id_set][id_target_set]/float(number_reads_all_sets[id_set])
+        vector_file.write(";"+str(value))
+    vector_file.write("\n")
+    vector_file.close()
+    
+    print ("All Commet work is done")
+    print ("\t Output csv matrices are in:"        )
+    print ("\t\t"+output_directory+"vector_plain.csv")
+    print ("\t\t"+output_directory+"vector_percentage.csv")
     
 ##############################################################################################################
 #################### Calling functions                                                       #################
@@ -360,6 +430,8 @@ def main():
                         help="input file of files (a line=a set composed by: \"set_name:read_file;read_file;read_file...\")" )
                         
     parser.add_argument('--sge', help='indicates the usage of SGE cluster commands', action="store_true") # SGE 
+    
+    parser.add_argument('--one_vs_all', help='With this option the first set is compared to all others. However, the other sets are not compared to each others.', action="store_true") 
     
     parser.add_argument("-b", "--binaries_directory", type=str, dest='binary_directory', metavar='',
                         help="binary directory  [default: \"./bin\"]", default="./bin" )
@@ -395,13 +467,13 @@ def main():
     output_directory=str(args.directory)
     if output_directory[-1]!='/': output_directory+="/"
     bin_dir=str(args.binary_directory)
-    # print "OIEHZFOIHJ"+bin_dir[-1]
+    # print "OIEHZFOIHJ"+bin_dir[-1])
     if bin_dir[-1]!='/': 
         bin_dir+="/"
     
     
     if not os.path.isfile(bin_dir+"bvop"):
-        print "Cannot find binaries in directory +\""+bin_dir+"\". Exit"
+        print ("Cannot find binaries in directory +\""+bin_dir+"\". Exit")
         sys.exit(1) 
     
     k=args.k
@@ -411,11 +483,11 @@ def main():
     e=args.e
     m=args.m
 
-    print "input file="+input_file, 
+    print ("input file="+input_file, )
     
 
     #ouput directory
-    print " output directory="+output_directory
+    print (" output directory="+output_directory)
     try:
         os.makedirs(output_directory)
     except OSError as exception:
@@ -425,34 +497,41 @@ def main():
 
     if l<k*t:
         if l != 0:
-            print "l should be at least k*t. "+str(l)+" is too small with k="+str(k)+" and t="+str(t)+". ",
+            print ("l should be at least k*t. "+str(l)+" is too small with k="+str(k)+" and t="+str(t)+". ",)
             l=k*t
-        print "I use l="+str(l)+"."
+        print ("I use l="+str(l)+".")
         
-    print "k="+str(k), 
+    print ("k="+str(k), )
     
-    print " t="+str(t),
+    print (" t="+str(t),)
     
-    print " l="+str(l),
+    print (" l="+str(l),)
     
     if(n>=0):
-        print " n="+str(n),
+        print (" n="+str(n),)
     else:
-        print " n=any",
+        print (" n=any",)
     
     
-    print " e="+str(e), 
+    print (" e="+str(e), )
     
     if(m>=0):
-        print "m="+str(m)
+        print ("m="+str(m))
     else:
-        print "m=all"
+        print ("m=all")
         
     SGE_COMMANDS=False
     if args.sge: 
-        print "SGE mode turned on"
+        print ("SGE mode turned on")
         SGE_COMMANDS=True
         
+        
+    ONE_VS_ALL=False
+    if args.one_vs_all: 
+        print ("one versus all mode turned on")
+        ONE_VS_ALL=True
+        print ("one versus all mode not implemented yet, exit")
+
     
     # Generate a temp prefix file name
     temp_files_prefix="temp_"
@@ -467,19 +546,19 @@ def main():
     filtering_job_ids=None
     if bvreadSetMatrix == None:
         # Filter the reads 
-        print "Reads were not filtered, we filter them."
+        print ("Reads were not filtered, we filter them.")
         filtering_job_ids=filterAllReads(readSetMatrix, output_directory, l, n, e, m, SGE_COMMANDS, bin_dir)
         bvreadSetMatrix = fillDefaultBVReadSetMatrix(readSetMatrix, output_directory)
         
-    
     # Generate the file of files containing the .bv of the filtered reads
     generateAFileOfFilesPerOriginalWithFilterBooleanVector(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, temp_files_prefix)
     
-    
     # Compare all against all
     alljobids=""
-#    for ref_id in range(len(readSetMatrix)-1,0,-1):
-    for ref_id in range(len(readSetMatrix)-1):
+
+    end=len(readSetMatrix)-1
+    if ONE_VS_ALL: end=1
+    for ref_id in range(end):
         jobids=compare_all_against(readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, temp_files_prefix, ref_id, k, t, SGE_COMMANDS, filtering_job_ids, bin_dir)
         alljobids+=jobids
         
@@ -491,14 +570,17 @@ def main():
         command="rm -f *"+temp_files_prefix+"*"
         last_job_id=int(os.popen("echo \""+command+"\"| qsub -cwd -m beas -j y -hold_jid "+str(alljobids)+" -N \"clean\"").read().split(" ")[2])
         
-        print "All Commet jobs are launched - once last job ("+str(last_job_id)+") is over, type the following command in order to analyze the .bv results :"
+        print ("All Commet jobs are launched - once last job ("+str(last_job_id)+") is over, type the following command in order to analyze the .bv results :")
         command="python Commet_analysis.py "+input_file+" -o "+output_directory+" -b "+bin_dir
-        print "\t"+command
+        print ("\t"+command)
     else:
-        output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, bin_dir)
+        if ONE_VS_ALL: 
+               output_vectors (readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, bin_dir)
+        else:
+               output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_directory, bin_dir)
         command="rm -f *"+temp_files_prefix+"*"
-        print "(removed temp files: "+command+")"
-        os.popen(command)
+        print ("(removed temp files: "+command+")")
+        os.system(command)
     	
         
         
