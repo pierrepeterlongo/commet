@@ -1,0 +1,3 @@
+set1: testsafac/A.fa
+set2: testsafac/B.fa
+set3: testsafac/C.fa

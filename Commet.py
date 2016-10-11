@@ -259,7 +259,6 @@ def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_direct
         
         # detect the number of shared reads with all other sets:
         array_sum_shared_reads=[]
-        print (readSetNames)
         for id_target_set in range(len(readSetNames)): # for each target set
             if id_set == id_target_set:
                 array_sum_shared_reads.append(number_reads_all_sets[id_set])
@@ -270,8 +269,6 @@ def output_matrices (readSetMatrix, bvreadSetMatrix, readSetNames, output_direct
                 number_shared_reads+=int(os.popen(command).read().split("\n")[-2].split()[0]) # get the  number of shared reads
             array_sum_shared_reads.append(number_shared_reads)
         matrix_sum_shared_reads.append(array_sum_shared_reads)
-    
-    
     
     # Output the matrices
     #####################
@@ -362,15 +359,19 @@ def output_vectors (readSetvector, bvreadSetvector, readSetNames, output_directo
     
     # Fill the vectors
     ####################
-    id_set=0
     # detect the number of involved reads per line of the input
-    number_reads=0
-    for read_set_bv in bvreadSetvector[id_set]:
-        command=bin_dir+"bvop "+read_set_bv+" -i"
-        number_reads+=int(os.popen(command).read().split("\n")[-2].split()[0])
-    number_reads_all_sets.append(number_reads)
+    for id_set in range(len(readSetNames)):
+       number_reads=0
+       for read_set_bv in bvreadSetvector[id_set]:
+           command=bin_dir+"bvop "+read_set_bv+" -i"
+           number_reads+=int(os.popen(command).read().split("\n")[-2].split()[0])
+       number_reads_all_sets.append(number_reads)
+
     
+
+    id_set=0
     # detect the number of shared reads with all other sets:
+    
     array_sum_shared_reads=[]
     print (readSetNames)
     for id_target_set in range(len(readSetNames)): # for each target set
@@ -382,23 +383,31 @@ def output_vectors (readSetvector, bvreadSetvector, readSetNames, output_directo
             command=bin_dir+"bvop "+output_directory+os.path.basename(read_set)+"_in_"+readSetNames[id_target_set]+".bv -i"
             number_shared_reads+=int(os.popen(command).read().split("\n")[-2].split()[0]) # get the  number of shared reads
         array_sum_shared_reads.append(number_shared_reads)
-    vector_sum_shared_reads.append(array_sum_shared_reads)
+    vector_sum_shared_reads.append(array_sum_shared_reads) # others  in set 1 (first line of the matrix)
+    vector_sum_shared_reads.append(number_reads_all_sets[id_set]) # set1 in set1 (a unique starting value)
+
+    for id_set in range(1,len(readSetNames)):
+        number_shared_reads=0
+        for read_set in readSetvector[id_set]: # for each read set of the surrent set of read sets :)
+            command=bin_dir+"bvop "+output_directory+os.path.basename(read_set)+"_in_"+readSetNames[0]+".bv -i"
+            number_shared_reads+=int(os.popen(command).read().split("\n")[-2].split()[0]) # get the  number of shared reads
+        vector_sum_shared_reads.append(number_shared_reads) # set1 in readset (a unique starting value)
+           
+
+    print (vector_sum_shared_reads)
     
-    
-    
-    # Output the matrices
+    # Output the vectors
     #####################
     # Plain vector
+    id_set=0
     vector_file=open(output_directory+"vector_plain.csv","w")
         
     for set_name in readSetNames:
         vector_file.write(";"+set_name)
     vector_file.write("\n")
-
     vector_file.write(readSetNames[id_set])
     for id_target_set in range(len(readSetNames)):
-        
-        vector_file.write(";"+str(vector_sum_shared_reads[id_set][id_target_set]))
+        vector_file.write(";"+str(vector_sum_shared_reads[id_set][id_target_set])+"/"+str(vector_sum_shared_reads[id_target_set+1]))
         
     vector_file.write("\n")
     vector_file.close()
@@ -410,8 +419,10 @@ def output_vectors (readSetvector, bvreadSetvector, readSetNames, output_directo
     vector_file.write("\n")
     vector_file.write(readSetNames[id_set])
     for id_target_set in range(len(readSetNames)):
-        value=100*vector_sum_shared_reads[id_set][id_target_set]/float(number_reads_all_sets[id_set])
+        value=100*(vector_sum_shared_reads[id_set][id_target_set])/float(number_reads_all_sets[id_set])
         vector_file.write(";"+str(value))
+        value=100*(vector_sum_shared_reads[id_target_set+1])/float(number_reads_all_sets[id_target_set])
+        vector_file.write("/"+str(value))
     vector_file.write("\n")
     vector_file.close()
     
@@ -431,7 +442,7 @@ def main():
                         
     parser.add_argument('--sge', help='indicates the usage of SGE cluster commands', action="store_true") # SGE 
     
-    parser.add_argument('--one_vs_all', help='With this option the first set is compared to all others. However, the other sets are not compared to each others.', action="store_true") 
+    parser.add_argument('--one_vs_all', help='With this option the first set is then called "first" and is compared to all others. However, the other sets are not compared to each others. In this case, commet outputs the reads from first set in all others and vice versa, and it outputs two "vector" files instead of three matrice files. File called vector_plain.csv (resp vector_percentage) contains for each read set i, the number (resp. percentage) of reads from "first" in i "/" the number (resp. percentage) of reads from i in ref.', action="store_true") 
     
     parser.add_argument("-b", "--binaries_directory", type=str, dest='binary_directory', metavar='',
                         help="binary directory  [default: \"./bin\"]", default="./bin" )
