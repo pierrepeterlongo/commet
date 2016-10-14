@@ -45,14 +45,10 @@ q75=quantile(cr3[row(cr3)!=col(cr3)],0.75,1)
 mini=max(q25-1.5*(q75-q25),0)
 maxi=min(q75+1.5*(q75-q25),trueMax)
 
+palette=colorRampPalette(c("green", "yellow", "red", "brown", "grey23"))(n = 5*n-1)
 
- breaks=unique(c(seq(mini,mini+diff/4,length=n), # for green
-                seq(mini+diff/4,mini+diff/2,length=n), # for yellow
-                seq(mini+diff/2,mini+3*diff/4,length=n), # for red
-                seq(mini+3*diff/4,maxi,length=n), # for brown
-                seq(maxi,trueMax,length=n))) # for black
-
-palette=colorRampPalette(c("green", "yellow", "red", "brown", "grey23"))(n = length(breaks)-1)
+## Checking if maxi = trueMax -> impacts on the breaks + plot of the colour scale
+trueMax.needed=ifelse(maxi<trueMax,"T","F")
 
 if(trueMax.needed){
   breaks=c(seq(mini,maxi,length=4*n),seq(maxi+1e-5,trueMax,le=n))
