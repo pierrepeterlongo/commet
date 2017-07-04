@@ -2,6 +2,12 @@ Contributors :
   Pierre PETERLONGO, pierre.peterlongo@inria.fr [24/07/14]
   Nicolas MAILLET, nicolas.maillet@inria.fr     [24/07/14]
   Guillaume Collet, guillaume@gcollet.fr        [24/07/14]
+  
+————————————————————————————————————————————————————————————————————————————————
+At a glance:
+Commet is used for de novo comparisons of raw read sets. It is the successor of 
+the compareads tool. 
+————————————————————————————————————————————————————————————————————————————————
 
 This software is a computer program whose purpose is to find all the similar
 reads between two set of NGS reads. It also provide a similarity score between
