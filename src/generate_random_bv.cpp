@@ -37,7 +37,7 @@ void print_usage ()
 	std::cout << "Usage : ./generate_random_bv <read_set> <percentage_kept_reads> <output_bv_name>\n";
 	std::cout << "Mandatory:\n";
 	std::cout << "\t<read_set>\t: read file \n";
-	std::cout << "\t<percentage_kept_reads>\t: percentage of reads to be kept from read_set \n";
+	std::cout << "\t<percentage_kept_reads>\t: percentage of reads to be kept from read_set (float) \n";
 	std::cout << "\t<output_bv_name>\t: name of the resulting boolean vector file name \n";
 }
 
@@ -49,12 +49,12 @@ int main (int argc, char ** argv)
 	// Read command line arguments through getopt
 	//
 	if (argc < 4) {
-		std::cerr << "A a read file, an integer and an ouput bv name must be provided. See usage.\n";
+		std::cerr << "A a read file, an float and an ouput bv name must be provided. See usage.\n";
 		print_usage();
 		return(1);
 	}
 	std::string read_set = argv[1];
-    const int percentage_kept_reads = atoi(argv[2]);
+    const float percentage_kept_reads = atof(argv[2]);
     if (percentage_kept_reads<0 or percentage_kept_reads>100){
         std::cerr <<" the Percentage of read to be kept must be in [0,100]. See usage.\n";
 		print_usage();
