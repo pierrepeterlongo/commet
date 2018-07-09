@@ -162,6 +162,16 @@ public:
 			unset(i);
 		}
 	}
+    
+    // Generates a bv of a given length with a given proportion of 1's
+    void random_vector(const unsigned int percentage) {
+        /* initialize random seed: */
+        srand (time(NULL));
+        init_false(boolean_vector_size); 
+        for (unsigned long i=0; i<boolean_vector_size;i++){
+            if (rand() % 100 < percentage) set(i);
+        }
+    }
 	
 	//
 	// Remove the boolean vector and set sizes to 0
@@ -463,3 +473,4 @@ public:
 };
 
 #endif /* BOOLEAN_VECTOR_H_ */
+

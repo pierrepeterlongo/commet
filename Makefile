@@ -33,7 +33,7 @@ ifeq ($(prof),1)
 endif
 
 
-all: bin/index_and_search bin/filter_reads bin/extract_reads bin/bvop bin/compare_reads
+all: bin/index_and_search bin/filter_reads bin/extract_reads bin/bvop bin/compare_reads bin/generate_random_bv
 
 bin/index_and_search: src/index_and_search.cpp $(HDRS)
 	@ if [ ! -d bin ]; then mkdir bin; fi
@@ -54,6 +54,10 @@ bin/extract_reads: src/extract_reads.cpp $(HDRS)
 bin/bvop: src/bvop.cpp $(HDRS)
 	@ if [ ! -d bin ]; then mkdir bin; fi
 	$(CC) -o bin/bvop src/bvop.cpp $(LDFLAGS) $(CFLAGS)
+	
+bin/generate_random_bv: src/generate_random_bv.cpp $(HDRS)
+	@ if [ ! -d bin ]; then mkdir bin; fi
+	$(CC) -o bin/generate_random_bv src/generate_random_bv.cpp $(LDFLAGS) $(CFLAGS)
 
 install:
 	cp bin/filter_reads /usr/local/bin/
